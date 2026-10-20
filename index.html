@@ -16,8 +16,9 @@
 /* Layout: one-column duel console on phones (scoreboard, board, clue bar, keypad); board + clue columns on desktop */
 :root{
   --bg:#E8EBF1; --surface:#FFFFFF; --ink:#131A2B; --muted:#58627A; --line:#C6CEDB;
-  --you:#2754D8; --you-soft:#D4DFFF; --rival:#D9690B; --rival-soft:#FFE0C2;
-  --sel:#FFD84D; --word:#DCE2EE; --bad:#D23434; --key:#D9DEE8;
+  --you:#2754D8; --you-soft:#C9D7FF; --rival:#D9690B; --rival-soft:#FFD6AE;
+  --sel:#FFD84D; --word:#FFF1BF; --bad:#D23434; --key:#D9DEE8;
+  --cell:#FFFFFF; --block:#1B2238;
   --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:6px;
@@ -26,13 +27,15 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
-  --you:#7D9CFF; --you-soft:#22336A; --rival:#FFA24D; --rival-soft:#553413;
-  --sel:#8C7212; --word:#263049; --bad:#FF6B6B; --key:#232C44; color-scheme:dark;
+  --you:#7D9CFF; --you-soft:#2A3F86; --rival:#FFA24D; --rival-soft:#6A3E12;
+  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44;
+  --cell:#26304A; --block:#05070D; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
-  --you:#7D9CFF; --you-soft:#22336A; --rival:#FFA24D; --rival-soft:#553413;
-  --sel:#8C7212; --word:#263049; --bad:#FF6B6B; --key:#232C44; color-scheme:dark;
+  --you:#7D9CFF; --you-soft:#2A3F86; --rival:#FFA24D; --rival-soft:#6A3E12;
+  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44;
+  --cell:#26304A; --block:#05070D; color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -99,16 +102,17 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 @media (min-width:860px){.game-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
 .play{display:flex;flex-direction:column;gap:12px;min-width:0}
 .board-wrap{display:flex;justify-content:center}
-.board{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:3px;width:min(100%,calc(var(--cols) * 44px));aspect-ratio:var(--cols)/var(--rows);container-type:inline-size;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.cell{position:relative;border-radius:4px;background:var(--surface);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(100cqw / var(--cols) * .52);line-height:1;text-transform:uppercase;cursor:pointer;transition:background-color .12s}
-.cell.void{background:transparent;border:0;cursor:default}
-.cell .n{position:absolute;top:1px;left:2px;font-size:calc(100cqw / var(--cols) * .25);font-weight:700;color:var(--muted)}
+@media (max-width:540px){.board-wrap{margin-left:calc(4px - max(16px,env(safe-area-inset-left,0px)));margin-right:calc(4px - max(16px,env(safe-area-inset-right,0px)))}}
+.board{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:1px;padding:2px;background:var(--block);border-radius:4px;width:min(100%,calc(var(--cols) * 40px));aspect-ratio:var(--cols)/var(--rows);container-type:inline-size;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cell{position:relative;border-radius:1px;background:var(--cell);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(100cqw / var(--cols) * .55);line-height:1;text-transform:uppercase;cursor:pointer;transition:background-color .12s;min-width:0}
+.cell.void{background:transparent;cursor:default}
+.cell .n{position:absolute;top:0;left:1px;font-size:max(7px,calc(100cqw / var(--cols) * .27));font-weight:700;color:var(--muted);line-height:1.1}
 .cell.inword{background:var(--word)}
-.cell.own-me{background:var(--you-soft);border-color:var(--you)}
-.cell.own-rv{background:var(--rival-soft);border-color:var(--rival)}
-.cell.own-split{background:linear-gradient(135deg,var(--you-soft) 50%,var(--rival-soft) 50%);border-color:var(--line)}
-.cell.pend{background:var(--you-soft);border-style:dashed;border-color:var(--you);animation:pulse 1s ease-in-out infinite}
-.cell.sel{background:var(--sel);border-color:var(--ink)}
+.cell.own-me{background:var(--you-soft)}
+.cell.own-rv{background:var(--rival-soft)}
+.cell.own-split{background:linear-gradient(135deg,var(--you-soft) 50%,var(--rival-soft) 50%)}
+.cell.pend{background:var(--you-soft);box-shadow:inset 0 0 0 2px var(--you);animation:pulse 1s ease-in-out infinite}
+.cell.sel{background:var(--sel);box-shadow:inset 0 0 0 2px var(--ink)}
 .cell.bad{color:var(--bad);animation:shake .35s}
 .cell.flash{animation:pop .45s}
 @keyframes pulse{50%{opacity:.6}}
@@ -186,7 +190,7 @@ body.touch .hint{display:none}
             </div>
           </div>
         </div>
-        <button class="btn ghost" id="btnSolo">Practicar solo · 5 min</button>
+        <button class="btn ghost" id="btnSolo">Practicar solo · 10 min</button>
       </div>
 
       <div class="panel">
@@ -275,7 +279,7 @@ body.touch .hint{display:none}
 (function(){
 "use strict";
 
-/* ---------- Banco de palabras ---------- */
+/* ---------- Banco de palabras (PALABRA|Pista) ---------- */
 const BANK = `CASA|Edificio para habitar
 PERRO|El mejor amigo del hombre, según el dicho
 GATO|Felino doméstico
@@ -476,87 +480,1221 @@ PIRATA|Navegante que asalta barcos
 TESORO|Lo busca el pirata con un mapa
 ROBOT|Máquina programable que imita a una persona
 COHETE|Nave que despega hacia el espacio
-PLANETA|Gira alrededor de una estrella`.trim().split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
+PLANETA|Gira alrededor de una estrella
+ALA|Sirve al ave para volar
+ARO|Anillo o pendiente circular
+ASA|Parte de la taza para agarrarla
+AVE|Animal con plumas
+BAR|Lugar para tomar un café o una cerveza
+BOA|Serpiente que asfixia a su presa
+CAL|Polvo blanco para pintar paredes
+COL|Verdura de hojas, pariente del repollo
+ECO|Repetición de un sonido que rebota
+EJE|Línea alrededor de la cual algo gira
+EGO|El yo, en psicología
+ERA|Período histórico
+ESO|Pronombre demostrativo neutro
+FAX|Aparato que enviaba documentos por teléfono
+FIN|Término, conclusión
+GAS|Estado de la materia, como el vapor
+GEL|Producto para fijar el pelo
+HOY|Este día
+IDA|Viaje hacia un lugar, opuesto a vuelta
+IRA|Enojo muy fuerte
+LAS|Artículo femenino plural
+LEY|Norma dictada por el Congreso
+LOS|Artículo masculino plural
+LUZ|Lo contrario de la oscuridad
+MAL|Lo contrario del bien
+NAO|Antigua nave a vela
+OCA|Ganso; también un juego de tablero
+OLA|Onda del mar
+PAZ|Ausencia de guerra
+PIO|Sonido del pollito
+RED|Malla para pescar
+RES|Animal vacuno
+RON|Bebida alcohólica de caña de azúcar
+SAL|Condimento blanco que se saca del mar
+SED|Ganas de tomar agua
+TIA|Hermana de tu madre o de tu padre
+TIO|Hermano de tu madre o de tu padre
+TOS|Se tiene con el resfrío
+VEZ|Ocasión, turno
+VID|Planta que da uvas
+VOZ|Sonido que sale de la garganta al hablar
+ZOO|Lugar con animales en exhibición, abreviado
+ACA|Aquí, en el Río de la Plata
+ASI|De esta manera
+AJI|Pimiento picante
+AMA|Dueña de casa
+CHE|Interjección muy argentina
+DON|Talento natural
+DUO|Pareja de músicos
+FAN|Seguidor entusiasta
+FAZ|Cara, rostro
+FEO|Lo contrario de lindo
+GEN|Unidad de la herencia biológica
+HAZ|Rayo de luz; también manojo
+LAR|Hogar
+OSA|Hembra del oso
+REO|Acusado
+TEA|Antorcha
+TUL|Tela fina de los velos
+YEN|Moneda de Japón
+ZAR|Emperador de Rusia
+LEO|Signo zodiacal de agosto
+APP|Aplicación del celular
+WEB|Sitio de internet
+BUG|Error en un programa
+ROL|Papel que se cumple
+DAR|Entregar
+VER|Percibir con los ojos
+SER|Verbo de la identidad
+OIR|Percibir sonidos
+MIO|Pronombre posesivo de primera persona
+AMOR|Sentimiento de cariño profundo
+ARTE|Pintura, música o escultura
+AUTO|Vehículo de cuatro ruedas
+BOTA|Calzado que cubre el tobillo
+BOLA|Cuerpo esférico
+BOTE|Embarcación pequeña
+CARA|Parte delantera de la cabeza
+CODO|Articulación del brazo
+COLA|Extremo trasero de muchos animales
+COPA|Vaso con pie; también trofeo
+DEDO|Hay cinco en cada mano
+DUDA|Falta de certeza
+FARO|Torre con luz para guiar barcos
+FOCA|Mamífero marino de los acuarios
+GALA|Fiesta elegante
+HADA|Ser mágico con varita
+HILO|Se usa para coser
+HOJA|Parte verde de la planta
+IDEA|Pensamiento, ocurrencia
+IMAN|Atrae el hierro
+JUGO|Líquido de la fruta exprimida
+LANA|Fibra que da la oveja
+LATA|Envase de metal
+LOMO|Espalda de un animal; también un corte de carne
+LORO|Pájaro que repite palabras
+MASA|Mezcla de harina y agua
+MIEL|Dulce que hacen las abejas
+MODA|Lo que se usa en una época
+MONO|Primate juguetón
+MURO|Pared gruesa
+NADA|Ninguna cosa
+NIDO|Casa del pájaro
+NOTA|Calificación de un examen
+NUEZ|Fruto seco de cáscara dura
+OBRA|Trabajo artístico o construcción
+ONDA|Ola; también buena vibra
+PALA|Herramienta para cavar
+PATO|Ave que hace cuac
+PAVO|Ave típica de Navidad en algunos países
+PESO|Moneda argentina
+PIEL|Cubre el cuerpo
+PINO|Árbol de Navidad
+PISO|Suelo de una habitación
+POLO|Extremo de la Tierra; deporte a caballo
+POZO|Hoyo profundo para sacar agua
+RAMA|Brazo del árbol
+RANA|Anfibio que salta y croa
+RATA|Roedor grande
+ROCA|Piedra grande
+ROSA|Flor con espinas; también un color
+RUTA|Camino, carretera
+SAPO|Pariente de la rana
+SOPA|Plato líquido y caliente
+SUMA|Operación con el signo más
+TAPA|Cierra un frasco
+TAZA|Recipiente con asa para el café
+TELA|Material para hacer ropa
+TORO|Macho de la vaca
+VASO|Recipiente para beber
+VELA|Da luz y se apaga soplando
+YATE|Barco de lujo
+YEMA|Parte amarilla del huevo
+ZONA|Área, región
+AULA|Sala de clases
+BEBE|Niño muy pequeño
+BESO|Muestra de cariño con los labios
+BICI|Rodado de dos pedales, abreviado
+CAJA|Recipiente con tapa
+CANA|Pelo blanco
+CRUZ|Signo de la suma
+CUBO|Figura con seis caras cuadradas
+DATO|Información
+EDAD|Años que tiene una persona
+FAMA|Lo que tienen las celebridades
+FILA|Hilera de personas esperando
+FOCO|Lámpara eléctrica
+FRIO|Lo que se siente en invierno
+GOMA|Sirve para borrar
+GRIS|Mezcla de blanco y negro
+HABA|Legumbre verde
+HIGO|Fruto de la higuera
+HIJO|Varón respecto de sus padres
+HUMO|Sale del fuego
+JEFE|Persona a cargo
+JOYA|Anillo, collar o pulsera valiosos
+JUEZ|Dicta sentencia
+LADO|Costado
+LIMA|Herramienta para las uñas; capital de Perú
+LOCO|Que perdió el juicio
+LUJO|Abundancia de cosas caras
+MIGA|Parte blanda del pan
+MINA|Excavación para sacar minerales
+MISA|Ceremonia católica
+MITO|Relato fabuloso de los antiguos
+MOTO|Vehículo de dos ruedas con caño de escape
+NAVE|Barco o vehículo espacial
+NUDO|Se hace con los cordones
+OLLA|Recipiente para cocinar guisos
+ONCE|Diez más uno
+PAIS|Nación
+PATA|Pierna de un animal
+PILA|Da energía a un control remoto
+SACO|Prenda de abrigo con botones
+SOGA|Cuerda gruesa
+TAXI|Auto amarillo y negro en Buenos Aires
+TEMA|Asunto, materia
+URNA|Caja donde se vota
+VENA|Lleva la sangre al corazón
+VIDA|Lo contrario de muerte
+VOTO|Se pone en la urna
+YESO|Polvo blanco para enyesar un hueso roto
+ZUMO|Jugo, en España
+AMAR|Querer mucho
+LEER|Lo que hacés con un libro
+OLER|Percibir con la nariz
+REIR|Soltar carcajadas
+ATAR|Unir con una cuerda
+ARAR|Abrir surcos en la tierra
+ORAR|Rezar
+OSAR|Atreverse
+USAR|Utilizar
+UNIR|Juntar
+ALTO|Lo contrario de bajo
+BAJO|Lo contrario de alto
+MALO|Lo contrario de bueno
+CARO|Lo contrario de barato
+DURO|Lo contrario de blando
+RICO|Con mucho dinero; también sabroso
+SECO|Sin agua
+MUDO|Que no habla
+SANO|Que tiene salud
+VIVO|Con vida
+ASIA|El continente más grande
+NILO|Río de Egipto
+CUBA|Isla del Caribe con capital en La Habana
+PERU|País de Machu Picchu
+ROMA|Capital de Italia
+PIBE|Chico, en lunfardo
+PUMA|Felino americano de color pardo
+ORCA|Ballena asesina
+TERO|Ave que grita en la pampa
+ALCE|Ciervo grande del norte
+BUEY|Toro castrado de trabajo
+MULA|Hija de yegua y burro
+FLAN|Postre de huevo y leche con caramelo
+PURE|Papa pisada
+MAIZ|Cereal del choclo
+KIWI|Fruta verde peluda
+COCO|Fruta de palmera
+APIO|Verdura de tallo largo
+SOJA|Legumbre muy cultivada en Argentina
+MANI|Fruto seco salado de la picada
+SOFA|Sillón para varias personas
+BUZO|Prenda de abrigo; también el que bucea
+CEJA|Pelo sobre el ojo
+NUCA|Parte de atrás del cuello
+WIFI|Red inalámbrica
+CHAT|Conversación por mensajes
+BLOG|Diario en internet
+LINK|Enlace
+DRON|Aparato volador a control remoto
+ARPA|Instrumento de cuerdas de forma triangular
+CORO|Grupo que canta
+ROCK|Género de guitarras eléctricas
+MAGO|Hace trucos de magia
+GOLF|Deporte de hoyos y palos
+CLUB|Asociación deportiva
+DUNA|Montaña de arena
+CABO|Punta de tierra que entra en el mar
+OMBU|Árbol emblemático de la pampa
+ALGA|Planta del mar
+ALMA|Espíritu
+ACTA|Documento de una reunión
+ANIS|Bebida con sabor a regaliz
+AURA|Halo que rodea a alguien
+AZAR|Casualidad
+BOLO|Pieza que se derriba en el bowling
+CASO|Asunto
+CERA|La hacen las abejas; sirve para velas
+CIMA|Punta de la montaña
+CITA|Encuentro acordado
+COSA|Objeto
+DAMA|Señora
+DIVA|Cantante famosa y caprichosa
+DOMO|Cúpula
+ELFO|Ser mágico de orejas puntiagudas
+ENTE|Organismo, entidad
+GAMA|Escala de colores
+GOTA|Pequeña porción de líquido
+JUDO|Arte marcial japonés
+LOGO|Símbolo de una marca
+LUPA|Lente que agranda
+META|Línea de llegada
+MIMO|Caricia; también artista que actúa sin hablar
+NENE|Chico pequeño
+PIPA|Se fuma con tabaco
+PLAN|Proyecto
+RAMO|Conjunto de flores
+RIMA|Coincidencia de sonidos al final de los versos
+SAGA|Serie de historias
+SEDA|Tela fina hecha por un gusano
+TACO|Parte del zapato; también comida mexicana
+TIRA|Banda larga y angosta
+TOGA|Vestimenta del juez
+TUBO|Caño
+VALS|Baile en tres tiempos
+YOGA|Disciplina de posturas y respiración
+ZINC|Metal grisáceo
+MAMA|Madre, cariñosamente
+NIÑA|Chica pequeña
+OBOE|Instrumento de viento de madera
+OCIO|Tiempo libre
+TIZA|Se escribe con ella en el pizarrón
+UÑA|Crece en la punta de los dedos
+EURO|Moneda de Alemania y Francia
+REAL|Moneda de Brasil
+SEIS|Caras de un dado
+OCHO|Patas de una araña
+DOCE|Diez más dos
+PALMA|Interior de la mano; también un árbol
+BARRIO|Parte de una ciudad, como Recoleta o Palermo
+BOLSA|Sirve para llevar las compras
+BRAZO|Va del hombro a la mano
+BRUJA|Mujer con escoba voladora en los cuentos
+BURRO|Animal de carga de orejas largas
+CABRA|Animal que trepa montañas y da leche
+CALOR|Lo que se siente en verano
+CAMPO|Terreno fuera de la ciudad
+CARNE|Alimento del asado
+CARRO|Vehículo con ruedas tirado por caballos
+CERCA|A poca distancia
+CHAPA|Lámina de metal
+CIELO|Donde están las nubes
+CINTA|Tira larga y angosta
+CLAVO|Se clava con martillo
+COCHE|Auto, en España
+CONEJO|Animal de orejas largas que sale de la galera
+CUELLO|Une la cabeza con el cuerpo
+CUERDA|Soga
+CULTURA|Conjunto de costumbres de un pueblo
+DANZA|Baile
+DEUDA|Lo que se debe
+DIOSA|Deidad femenina
+DUCHA|Baño de lluvia
+DUENDE|Ser mágico pequeño y travieso
+ENERO|Primer mes del año
+FEBRERO|Segundo mes del año
+MARZO|Mes en que empieza el otoño en Argentina
+ABRIL|Cuarto mes del año
+MAYO|Mes de la Revolución de 1810
+JUNIO|Mes del Día de la Bandera
+JULIO|Mes del Día de la Independencia argentina
+AGOSTO|Octavo mes del año
+OCTUBRE|Décimo mes del año
+NOVIEMBRE|Penúltimo mes del año
+DICIEMBRE|Mes de Navidad
+LUNES|Primer día hábil de la semana
+MARTES|Día que sigue al lunes
+JUEVES|Día que sigue al miércoles
+VIERNES|Último día hábil de la semana
+SABADO|Día que sigue al viernes
+DOMINGO|Último día de la semana
+ENANO|Hay siete con Blancanieves
+ESCALERA|Tiene escalones
+ESPALDA|Parte trasera del torso
+ETAPA|Fase de un proceso
+FALDA|Pollera
+FECHA|Día, mes y año
+FERIA|Mercado al aire libre
+FIDEO|Pasta larga y fina
+FIRMA|Nombre escrito a mano para validar algo
+FONDO|Parte más baja o lejana
+FRUTA|La manzana o la pera, por ejemplo
+FUENTE|Origen de algo; también un tipo de letra
+GALLO|Canta al amanecer
+GANSO|Ave parecida al pato, más grande
+GARRA|Uña fuerte de un ave de presa
+GENTE|Personas
+GLOBO|Se infla con aire o helio
+GORDO|Lo contrario de flaco
+GRANO|Semilla de un cereal
+GRITO|Voz muy fuerte
+GRUPO|Conjunto de personas
+GUANTE|Abriga la mano
+GUSANO|Animal blando que se arrastra
+HACHA|Herramienta para cortar leña
+HAMBRE|Ganas de comer
+HARINA|Polvo de trigo molido
+HELADO|Postre frío
+HERMANA|Hija de los mismos padres
+HIERBA|Pasto
+HOGAR|Casa, familia
+HOMBRO|Une el brazo al cuerpo
+HONGO|Crece en lugares húmedos; algunos se comen
+HORNO|Se usa para cocinar pizzas y tortas
+HUESO|Forma el esqueleto
+IGLESIA|Templo cristiano
+JABON|Sirve para lavarse las manos
+JAMON|Fiambre de cerdo
+JARRA|Recipiente para servir agua
+JAULA|Encierra a un pájaro
+JIRAFA|El animal de cuello más largo
+JOVEN|Persona de poca edad
+JUGADOR|Participa en un partido
+JUGUETE|Objeto para que juegue un niño
+LABIO|Borde de la boca
+LADRILLO|Bloque para construir paredes
+LAGARTO|Reptil de cola larga
+LAGRIMA|Gota que sale del ojo al llorar
+LAMPARA|Da luz en una habitación
+LARGO|Lo contrario de corto
+LECHUGA|Verdura base de la ensalada
+LENGUA|Órgano del gusto; también idioma
+LENTE|Vidrio que aumenta o corrige la vista
+LENTEJA|Legumbre chiquita y redonda
+LETRA|Hay veintisiete en el abecedario
+LIBRE|Que no está preso ni ocupado
+LINEA|Raya recta
+LISTA|Enumeración de cosas
+LLAMA|Fuego; también camélido andino
+LLANTA|Aro metálico de la rueda
+LUGAR|Sitio, espacio
+MADERA|Material que sale de los árboles
+MALETA|Valija
+MANTA|Frazada liviana
+MANTECA|Grasa de la leche para untar
+MARCO|Rodea un cuadro
+MARIPOSA|Insecto de alas de colores
+MASCOTA|Animal de compañía
+MEDIA|Prenda que cubre el pie
+MEDIO|Centro, mitad
+MELON|Fruta grande de pulpa dulce
+MENTE|Donde están los pensamientos
+MERCADO|Lugar para comprar y vender
+METAL|El hierro o el cobre, por ejemplo
+METRO|Unidad de longitud; también tren subterráneo
+MIEDO|Lo que da una película de terror
+MILLA|Unidad de distancia anglosajona
+MOCHILA|Bolso que se lleva en la espalda
+MONEDA|Dinero de metal
+MOSCA|Insecto molesto que zumba
+MUELA|Diente del fondo para masticar
+MUNDO|La Tierra y todo lo que hay en ella
+MUSEO|Exhibe obras de arte o historia
+NEGOCIO|Comercio
+NIETO|Hijo del hijo
+NOVIA|Pareja de un muchacho
+NUEVO|Lo contrario de viejo
+OBRERO|Trabaja en una fábrica o una obra
+OFICINA|Lugar de trabajo con escritorios
+OLIVO|Árbol de la aceituna
+OMBLIGO|Cicatriz en el centro de la panza
+ORILLA|Borde del río o del mar
+PAGINA|Cara de una hoja de libro
+PAJARO|Animal con alas que canta
+PALACIO|Casa de un rey
+PALOMA|Ave de plaza; símbolo de la paz
+PANZA|Barriga
+PARED|Muro de una habitación
+PARQUE|Espacio verde de la ciudad
+PASTO|Hierba que cubre el campo
+PATIO|Espacio abierto dentro de una casa
+PECHO|Parte delantera del torso
+PEINE|Sirve para arreglar el pelo
+PELUCA|Pelo postizo
+PERLA|Gema que se forma en una ostra
+PESCADO|Pez que se come
+PIERNA|Extremidad para caminar
+PINGUINO|Ave que no vuela y vive en el frío
+PIRAMIDE|Monumento de Egipto
+PISTA|Indicio; también lugar donde aterrizan aviones
+PLATO|Recipiente para servir comida
+PLUMA|Cubre el cuerpo de las aves
+POSTRE|Se come al final
+PRADO|Campo con pasto
+PRECIO|Lo que cuesta algo
+PREMIO|Recompensa al ganador
+PRIMO|Hijo de tu tío
+PUERTO|Donde atracan los barcos
+PULGA|Insecto que salta y pica a los perros
+PUNTO|Signo que cierra una oración
+RADIO|Aparato para escuchar música y noticias
+RAIZ|Parte de la planta bajo tierra
+RAYO|Descarga eléctrica de una tormenta
+RECETA|Instrucciones para cocinar un plato
+REGLA|Sirve para medir y trazar líneas
+RESTO|Lo que sobra
+ROBLE|Árbol de madera dura
+RODILLA|Articulación de la pierna
+RUEDA|Pieza redonda que gira
+RUIDO|Sonido molesto
+SABANA|Tela que cubre el colchón
+SALSA|Acompaña la pasta; también un baile
+SALUD|Estado de no estar enfermo
+SANDIA|Fruta grande verde por fuera y roja por dentro
+SANGRE|Líquido rojo del cuerpo
+SELLO|Se pegaba en las cartas
+SEMILLA|De ella nace una planta
+SENDA|Camino angosto
+SERPIENTE|Reptil sin patas
+SIESTA|Descanso después de almorzar
+SIGLO|Cien años
+SILENCIO|Ausencia de ruido
+SOBRE|Envoltorio de una carta
+SOMBRERO|Prenda para la cabeza con ala
+SONRISA|Gesto de alegría con la boca
+SUELO|Piso
+SUELDO|Pago por un trabajo
+TABLA|Pieza plana de madera
+TALLER|Lugar donde se arreglan autos
+TAMBOR|Instrumento de percusión
+TARDE|Entre el mediodía y la noche
+TARJETA|De crédito o de débito
+TECHO|Cubre una casa
+TEJADO|Techo de tejas
+TENEDOR|Cubierto con dientes
+TIENDA|Negocio; también carpa
+TIMBRE|Suena al llegar visitas
+TINTA|Líquido de la lapicera
+TOALLA|Sirve para secarse
+TORMENTA|Lluvia con rayos y truenos
+TORTUGA|Reptil lento con caparazón
+TRAJE|Saco y pantalón haciendo juego
+TRIGO|Cereal con el que se hace harina
+TRUENO|Ruido que sigue al rayo
+TUERCA|Se enrosca en un tornillo
+TUMBA|Sepulcro
+TUNEL|Paso subterráneo
+VALLE|Llanura entre montañas
+VAPOR|Agua en estado gaseoso
+VECINO|Vive en la casa de al lado
+VELERO|Barco a vela
+VERDAD|Lo contrario de mentira
+VESTIDO|Prenda femenina de una pieza
+VIDRIO|Material transparente de las ventanas
+VIEJO|De mucha edad
+YERBA|Se usa para el mate
+ZANAHORIA|Verdura naranja que comen los conejos
+ZAPATILLA|Calzado deportivo
+ZAPATO|Calzado de vestir
+ANDAR|Caminar
+BAILAR|Moverse al ritmo de la música
+BEBER|Tomar un líquido
+BUSCAR|Tratar de encontrar
+CANTAR|Hacer música con la voz
+CERRAR|Lo contrario de abrir
+ABRIR|Lo contrario de cerrar
+COMER|Ingerir alimentos
+CORRER|Ir muy rápido a pie
+COSER|Unir telas con aguja e hilo
+CREAR|Hacer algo nuevo
+DORMIR|Descansar con los ojos cerrados
+ESCRIBIR|Poner palabras en un papel
+ESTUDIAR|Prepararse para un examen
+GANAR|Lo contrario de perder
+PERDER|Lo contrario de ganar
+HABLAR|Decir palabras
+JUGAR|Divertirse con un juego
+LAVAR|Limpiar con agua
+LLORAR|Derramar lágrimas
+LLOVER|Caer agua de las nubes
+MIRAR|Dirigir la vista
+NADAR|Moverse en el agua
+PAGAR|Dar dinero a cambio de algo
+PENSAR|Usar la mente
+PINTAR|Cubrir de color
+SALTAR|Elevarse del suelo con impulso
+SALIR|Lo contrario de entrar
+ENTRAR|Pasar adentro
+SOÑAR|Imaginar mientras se duerme
+SUBIR|Ir hacia arriba
+BAJAR|Ir hacia abajo
+TOCAR|Palpar; también hacer sonar un instrumento
+TOMAR|Agarrar; también beber
+VENDER|Lo contrario de comprar
+COMPRAR|Adquirir pagando
+VIAJAR|Ir a otro lugar
+VOLAR|Lo que hacen los pájaros
+VOLVER|Regresar
+COCINAR|Preparar la comida
+NACER|Venir al mundo
+MORIR|Dejar de vivir
+DECIR|Expresar con palabras
+SABER|Conocer
+PODER|Tener la capacidad
+QUERER|Desear
+SENTIR|Experimentar una emoción
+VIVIR|Estar con vida
+REMAR|Mover un bote con remos
+ANCHO|Lo contrario de angosto
+BELLO|Hermoso
+BUENO|Lo contrario de malo
+BARATO|Que cuesta poco
+CLARO|Con mucha luz; también obvio
+CORTO|Lo contrario de largo
+BLANDO|Lo contrario de duro
+FACIL|Que no cuesta esfuerzo
+FELIZ|Contento
+FLACO|Lo contrario de gordo
+FUERTE|Con mucha fuerza
+GRANDE|De mucho tamaño
+LENTO|Lo contrario de rápido
+RAPIDO|Veloz
+LIMPIO|Sin suciedad
+LINDO|Bonito, en el Río de la Plata
+LLENO|Lo contrario de vacío
+VACIO|Sin nada adentro
+POBRE|Sin dinero
+MOJADO|Con agua encima
+SUCIO|Lo contrario de limpio
+TRISTE|Lo contrario de alegre
+ALEGRE|Contento, divertido
+CALVO|Sin pelo
+CIEGO|Que no ve
+SORDO|Que no oye
+AGRIO|Ácido
+AMARGO|Sabor del café sin azúcar
+SALADO|Con mucha sal
+TIBIO|Ni frío ni caliente
+OSCURO|Sin luz
+PESADO|Que pesa mucho
+LIVIANO|Que pesa poco
+REDONDO|Con forma de círculo
+ENFERMO|Que no tiene salud
+JUSTO|Equitativo
+LISTO|Preparado; también inteligente
+ROSARIO|Ciudad donde Belgrano izó por primera vez la bandera
+CORDOBA|Provincia conocida como La Docta
+MENDOZA|Provincia del buen vino
+SALTA|Provincia del norte apodada la Linda
+JUJUY|Provincia de la Quebrada de Humahuaca
+TUCUMAN|Provincia donde se declaró la Independencia
+BARILOCHE|Ciudad del chocolate, junto al Nahuel Huapi
+USHUAIA|Ciudad del fin del mundo
+PATAGONIA|Región del sur argentino
+CHACO|Provincia del noreste argentino
+MISIONES|Provincia de las Cataratas del Iguazú
+IGUAZU|Cataratas famosas del norte argentino
+PARANA|Río y ciudad entrerriana
+URUGUAY|País vecino; también un río
+CHILE|País al otro lado de la cordillera
+BRASIL|El país más grande de Sudamérica
+BOLIVIA|País con capital en Sucre
+PARAGUAY|País con capital en Asunción
+MEXICO|País de los mariachis
+ESPAÑA|País de Madrid
+FRANCIA|País de la Torre Eiffel
+ITALIA|País de Roma
+ALEMANIA|País de Berlín
+INGLATERRA|País de Londres
+JAPON|País del sol naciente
+CHINA|País de la Gran Muralla
+INDIA|País del Taj Mahal
+RUSIA|El país más extenso del mundo
+EGIPTO|País de las pirámides de Giza
+GRECIA|Cuna de la democracia
+CANADA|País de la hoja de arce
+PARIS|Capital de Francia
+MADRID|Capital de España
+LONDRES|Capital del Reino Unido
+BERLIN|Capital de Alemania
+TOKIO|Capital de Japón
+QUITO|Capital de Ecuador
+CARACAS|Capital de Venezuela
+BOGOTA|Capital de Colombia
+SANTIAGO|Capital de Chile
+ASUNCION|Capital de Paraguay
+MONTEVIDEO|Capital de Uruguay
+LISBOA|Capital de Portugal
+ATENAS|Capital de Grecia
+MOSCU|Capital de Rusia
+EUROPA|Continente de Francia y Alemania
+AFRICA|Continente de Egipto y Kenia
+AMERICA|Continente de Argentina
+AMAZONAS|El río más caudaloso del mundo
+ACONCAGUA|El cerro más alto de América
+RECOLETA|Barrio porteño con un famoso cementerio
+PALERMO|Barrio porteño de los bosques
+OBELISCO|Monumento de la avenida 9 de Julio
+CAMINITO|Calle museo de La Boca
+GAUCHO|Hombre de campo de la pampa
+CRIOLLO|Nacido en América de padres europeos
+MALBEC|Uva insignia del vino argentino
+ALFAJOR|Golosina de dos tapas con dulce de leche
+CHORIPAN|Sándwich de chorizo
+FACTURA|Medialuna o vigilante, en la panadería
+MEDIALUNA|Factura con forma curva
+MILANESA|Carne empanada y frita
+PROVOLETA|Queso a la parrilla
+CHIMICHURRI|Salsa para el asado
+COLECTIVO|Bondi
+SUBTE|Tren que va bajo tierra en Buenos Aires
+BOMBILLA|Se usa para tomar mate
+TERMO|Mantiene caliente el agua del mate
+LABURO|Trabajo, en lunfardo
+GUITA|Plata, en lunfardo
+BIRRA|Cerveza, en lunfardo
+CHABON|Tipo, muchacho, en el habla porteña
+MANGO|Fruta tropical; también un peso, en lunfardo
+QUILOMBO|Lío, desorden, en lunfardo
+FIACA|Pereza, en lunfardo
+BONDI|Colectivo, en lunfardo
+MORFI|Comida, en lunfardo
+FERNET|Bebida amarga que se toma con cola
+MILONGA|Baile y lugar donde se baila tango
+BANDONEON|Instrumento típico del tango
+CANDOMBE|Ritmo afro rioplatense
+CUARTETO|Ritmo popular cordobés
+CHACARERA|Danza folclórica argentina
+ZAMBA|Danza folclórica que se baila con pañuelo
+PAYADOR|Cantor que improvisa con guitarra
+MARADONA|Autor de la Mano de Dios
+MESSI|Capitán campeón del mundo en 2022
+RIVER|Club de Núñez
+ABEJA|Insecto que hace miel
+ARAÑA|Teje su tela
+HORMIGA|Insecto trabajador que vive en colonias
+GRILLO|Insecto que canta de noche
+MOSQUITO|Insecto que pica y zumba
+CANGURO|Animal australiano con bolsa
+CEBRA|Caballo a rayas
+CAMELLO|Animal con dos jorobas
+ELEFANTE|Animal con trompa
+HIPOPOTAMO|Animal enorme que vive en ríos africanos
+JAGUAR|Felino americano manchado
+CONDOR|Ave gigante de los Andes
+CARPINCHO|El roedor más grande del mundo
+ÑANDU|Ave corredora de la pampa
+GUANACO|Camélido patagónico
+VICUÑA|Camélido andino de lana fina
+HORNERO|Ave nacional argentina que hace nidos de barro
+TIBURON|Pez de dientes afilados
+CANGREJO|Camina de costado
+CARACOL|Lleva su casa a cuestas
+MURCIELAGO|Mamífero que vuela de noche
+ARDILLA|Roedor que junta nueces
+PANTERA|Felino negro
+GORILA|El primate más grande
+KOALA|Marsupial que come eucalipto
+LEOPARDO|Felino de manchas
+NUTRIA|Roedor de río
+GALLINA|Pone huevos
+CISNE|Ave blanca de cuello largo
+TUCAN|Ave de pico grande y colorido
+FLAMENCO|Ave rosada que se para en una pata
+MEDUSA|Animal marino gelatinoso
+SALMON|Pez de carne rosada
+TRUCHA|Pez de río patagónico
+SARDINA|Pez chico que viene en lata
+PERDIZ|Ave de campo
+VIBORA|Serpiente venenosa
+IGUANA|Reptil verde
+LIEBRE|Pariente del conejo, más veloz
+CIERVO|Animal con cornamenta
+YACARE|Caimán del Litoral
+YEGUA|Hembra del caballo
+POTRO|Caballo joven
+CORDERO|Cría de la oveja
+TERNERO|Cría de la vaca
+LECHON|Cerdito que se hace al asador
+ACEITE|Líquido para freír
+ACEITUNA|Fruto del olivo
+AZUCAR|Endulza el café
+SALCHICHA|Va en el pancho
+PANCHO|Salchicha en pan
+TOSTADA|Pan dorado
+GALLETA|Bizcocho seco
+GALLETITA|Se come con el mate
+BIZCOCHUELO|Torta esponjosa
+CHOCOLATE|Se hace con cacao
+CARAMELO|Golosina dura de azúcar
+CREMA|Se bate para el postre
+YOGUR|Lácteo fermentado
+SANDWICH|Dos panes con relleno
+HAMBURGUESA|Carne picada en pan
+GUISO|Comida de olla
+LOCRO|Guiso patrio de maíz
+HUMITA|Pasta de choclo envuelta en chala
+CHOCLO|Mazorca de maíz
+POMELO|Cítrico amargo
+DURAZNO|Fruta de piel aterciopelada
+CIRUELA|Fruta morada
+CEREZA|Fruta roja chiquita con carozo
+ANANA|Fruta tropical con corona
+PALTA|Fruta verde cremosa
+PEPINO|Verdura verde alargada
+ZAPALLO|Hortaliza grande y naranja
+BERENJENA|Hortaliza violeta
+ESPINACA|Verdura de Popeye
+REPOLLO|Verdura de hojas apretadas
+MORRON|Pimiento
+PEREJIL|Hierba picada para condimentar
+OREGANO|Condimento de la pizza
+PIMIENTA|Condimento que hace estornudar
+SALAME|Fiambre de la picada
+MORTADELA|Fiambre de cerdo con trocitos de grasa
+PICADA|Fiambres y quesos para compartir
+MOSTAZA|Aderezo amarillo
+VINAGRE|Condimento ácido de la ensalada
+AVENA|Cereal de los copos del desayuno
+CEBADA|Cereal de la cerveza
+POROTO|Legumbre, frijol
+GARBANZO|Legumbre del hummus
+ALMENDRA|Fruto seco ovalado
+MERMELADA|Dulce de fruta para la tostada
+ALMOHADA|Apoyo para la cabeza al dormir
+ALFOMBRA|Cubre el piso
+ARMARIO|Mueble para guardar ropa
+BALCON|Se asoma a la calle
+BAÑERA|Tina
+BOTELLA|Envase de vidrio o plástico
+CAJON|Parte deslizable de un mueble
+CARTERA|Bolso de mano
+CEPILLO|Sirve para lavarse los dientes
+COLCHON|Parte blanda de la cama
+CORTINA|Tapa la ventana
+CUADRO|Pintura enmarcada
+CUCHARA|Cubierto para la sopa
+CUCHILLO|Cubierto para cortar
+ESCOBA|Sirve para barrer
+ESTANTE|Tabla para poner libros
+FRAZADA|Manta de abrigo
+HELADERA|Mantiene fríos los alimentos
+LAVARROPAS|Electrodoméstico para la ropa
+LINTERNA|Luz portátil
+MANTEL|Cubre la mesa
+MARTILLO|Herramienta para clavar
+MUEBLE|Mesa, silla o placard
+PARAGUAS|Protege de la lluvia
+PERCHA|Para colgar la ropa
+PLANCHA|Saca las arrugas de la ropa
+SARTEN|Para freír
+SILLON|Asiento cómodo con brazos
+TELEVISOR|Aparato para ver programas
+TORNILLO|Se ajusta con destornillador
+VELADOR|Lámpara de mesa de luz
+BALDE|Recipiente para cargar agua
+ANTEOJOS|Ayudan a ver mejor
+BILLETERA|Para guardar la plata
+CUADERNO|Libreta para tomar apuntes
+PIZARRON|Donde escribe la maestra
+COMPAS|Instrumento para trazar círculos
+LIBRETA|Cuaderno pequeño
+CARPETA|Guarda hojas sueltas
+ESTAMPILLA|Sello postal
+POSTAL|Tarjeta de viaje
+BIROME|Lapicera, en Argentina
+ABANICO|Sirve para darse aire
+ANILLO|Se pone en el dedo
+COLLAR|Se pone en el cuello
+PULSERA|Se pone en la muñeca
+BOTON|Abrocha la camisa
+CIERRE|Cremallera
+CORBATA|Se anuda en el cuello de la camisa
+CAMISA|Prenda con cuello y botones
+PANTALON|Prenda que cubre las piernas
+REMERA|Camiseta
+CAMPERA|Abrigo con cierre
+BUFANDA|Abriga el cuello
+POLLERA|Falda
+OJOTA|Calzado de playa
+GORRO|Abriga la cabeza
+GORRA|Prenda con visera para la cabeza
+PESTAÑA|Pelo del borde del párpado
+MEJILLA|Cachete
+FRENTE|Parte de la cara sobre las cejas
+BARBA|Pelo de la cara
+BIGOTE|Pelo sobre el labio
+MENTON|Parte de abajo de la cara
+CINTURA|Parte media del cuerpo
+CADERA|Hueso de la pelvis
+TOBILLO|Une el pie con la pierna
+TALON|Parte trasera del pie
+MUÑECA|Une la mano con el brazo; también un juguete
+PULMON|Órgano para respirar
+CEREBRO|Órgano del pensamiento
+HIGADO|Órgano que fabrica la bilis
+RIÑON|Órgano que produce la orina
+ESTOMAGO|Donde se digiere la comida
+MUSCULO|Se fortalece en el gimnasio
+COSTILLA|Hueso del tórax
+CRANEO|Hueso de la cabeza
+GARGANTA|Duele con la angina
+PULGAR|Dedo gordo
+ABOGADO|Defiende en un juicio
+ACTOR|Trabaja en el cine o el teatro
+ALBAÑIL|Construye paredes
+ARQUITECTO|Diseña edificios
+BOMBERO|Apaga incendios
+CARTERO|Reparte cartas
+CHOFER|Maneja un vehículo
+COCINERO|Prepara la comida en un restaurante
+DENTISTA|Médico de los dientes
+ENFERMERA|Asiste al médico
+GRANJERO|Trabaja en la granja
+JARDINERO|Cuida las plantas
+MECANICO|Arregla autos
+MUSICO|Toca un instrumento
+PANADERO|Hace el pan
+PESCADOR|Saca peces del agua
+PILOTO|Maneja un avión
+PINTOR|Pinta cuadros o paredes
+POLICIA|Cuida el orden público
+PROFESOR|Enseña en la escuela o la facultad
+SASTRE|Hace trajes a medida
+SOLDADO|Integra un ejército
+VETERINARIO|Médico de animales
+CARPINTERO|Trabaja la madera
+PLOMERO|Arregla caños
+ESCRITOR|Escribe libros
+PERIODISTA|Escribe noticias
+FOTOGRAFO|Saca fotos
+ASTRONAUTA|Viaja al espacio
+DISEÑADOR|Crea gráficas o ropa
+PROGRAMADOR|Escribe código
+CAJERO|Cobra en la caja
+CELULAR|Teléfono móvil
+COMPUTADORA|Máquina para trabajar y navegar
+ARCHIVO|Documento guardado
+CLAVE|Contraseña
+USUARIO|Persona que usa un sistema
+PIXEL|Punto de una imagen digital
+VIRUS|Infecta una computadora o un cuerpo
+VIDEO|Grabación de imágenes en movimiento
+EMOJI|Carita del chat
+BATERIA|Instrumento de tambores y platillos; también pila
+FLAUTA|Instrumento de viento
+TROMPETA|Instrumento de metal de viento
+VIOLIN|Instrumento de cuerdas con arco
+CHARANGO|Guitarra andina chiquita
+QUENA|Flauta andina
+BOMBO|Tambor del folclore
+RITMO|Pulso de la música
+OPERA|Teatro cantado
+DISCO|Álbum musical
+CONCIERTO|Show de música en vivo
+NOVELA|Libro con una historia larga
+CUENTO|Historia corta
+FABULA|Cuento con moraleja
+HEROE|Protagonista valiente
+VILLANO|El malo de la historia
+PRINCESA|Hija del rey
+PRINCIPE|Hijo del rey
+GIGANTE|Personaje enorme de los cuentos
+FANTASMA|Espíritu que asusta
+VAMPIRO|Chupa sangre en las leyendas
+MOMIA|Cuerpo vendado de Egipto
+SIRENA|Mitad mujer, mitad pez
+UNICORNIO|Caballo con un cuerno
+CIRCO|Espectáculo con payasos
+PAYASO|Hace reír en el circo
+TITERE|Muñeco que se mueve con la mano
+ARQUERO|Defiende el arco
+DELANTERO|Jugador que ataca
+PENAL|Tiro desde los once metros
+CORNER|Tiro de esquina
+ARBITRO|Juez del partido
+ESTADIO|Cancha grande con tribunas
+CANCHA|Campo de juego
+HINCHA|Fanático de un club
+CLASICO|Partido entre rivales históricos
+MUNDIAL|Copa del mundo de fútbol
+RUGBY|Deporte de los Pumas
+HOCKEY|Deporte de las Leonas
+BOXEO|Deporte de guantes y ring
+NATACION|Deporte en la pileta
+PILETA|Piscina
+RAQUETA|Se usa en el tenis
+MEDALLA|Premio olímpico
+MARATON|Carrera de 42 kilómetros
+TRUCO|Juego de cartas argentino; también engaño
+ENVIDO|Canto del truco
+POKER|Juego de cartas con fichas
+DOMINO|Juego de fichas con puntos
+DAMAS|Juego de tablero de fichas que comen en diagonal
+BINGO|Juego de cartones y números
+LOTERIA|Juego de azar con billetes numerados
+RULETA|Juego de casino que gira
+TABLERO|Superficie del ajedrez
+ALFIL|Pieza de ajedrez que va en diagonal
+PEON|La pieza más chica del ajedrez
+JAQUE|Amenaza al rey en el ajedrez
+ATOMO|Partícula de la materia
+ENERGIA|Capacidad de hacer trabajo
+FUERZA|La que tenés en los músculos
+CLIMA|Tiempo atmosférico de una región
+COMETA|Astro con cola; también barrilete
+GALAXIA|Conjunto enorme de estrellas
+ECLIPSE|Cuando la Luna tapa al Sol
+ORBITA|Camino de un planeta alrededor del Sol
+JUPITER|El planeta más grande
+SATURNO|Planeta de los anillos
+VENUS|El planeta más brillante del cielo
+MERCURIO|El planeta más cercano al Sol
+NEPTUNO|Planeta azul y lejano
+URANO|Séptimo planeta
+GRAVEDAD|Nos mantiene pegados al suelo
+OXIGENO|Gas que respiramos
+CARBONO|Elemento base de la vida
+ACIDO|Sabor del limón
+NIEBLA|Nube a ras del suelo
+ROCIO|Gotitas de la mañana en el pasto
+GRANIZO|Lluvia de hielo
+ARCOIRIS|Arco de siete colores
+BRISA|Viento suave
+TORNADO|Remolino de viento destructor
+SISMO|Terremoto
+CUEVA|Hueco en la roca
+COSTA|Orilla del mar
+BAHIA|Entrada del mar en la costa
+GOLFO|Gran entrada del mar
+COLINA|Elevación chica del terreno
+CERRO|Monte
+GLACIAR|Río de hielo, como el Perito Moreno
+LAGUNA|Lago chico
+ARROYO|Río chico
+CASCADA|Caída de agua
+OASIS|Agua en el desierto
+PRADERA|Llanura de pasto
+TRONCO|Parte gruesa del árbol
+SAUCE|Árbol llorón
+CEIBO|Árbol de la flor nacional argentina
+JACARANDA|Árbol de flores violetas en Buenos Aires
+CACTUS|Planta con espinas del desierto
+MARGARITA|Flor blanca de centro amarillo
+GIRASOL|Flor que sigue al sol
+TULIPAN|Flor típica de Holanda
+CLAVEL|Flor que se lleva en el ojal
+ORQUIDEA|Flor exótica y elegante
+JAZMIN|Flor blanca muy perfumada
+HELECHO|Planta sin flores de hojas grandes
+MUSGO|Planta verde que crece en piedras húmedas
+AMISTAD|Relación entre amigos
+APODO|Sobrenombre
+AVENTURA|Experiencia emocionante
+AYUDA|Auxilio
+BANDERA|Celeste y blanca, la argentina
+BANCO|Asiento de plaza; también entidad financiera
+BASURA|Desechos
+BATALLA|Combate
+BRUJULA|Indica el norte
+CAMINO|Vía para ir de un lugar a otro
+CAMBIO|Vuelto; también transformación
+CARRERA|Competencia de velocidad; también estudios universitarios
+CASTIGO|Pena por portarse mal
+CIENCIA|Conocimiento basado en experimentos
+CLASE|Lección
+COLEGIO|Escuela
+COMIDA|Lo que se come
+CONSEJO|Recomendación
+CUENTA|Lo que hay que pagar en el restaurante
+CULPA|Responsabilidad de un error
+DESTINO|Lugar al que se va; también suerte
+DIBUJO|Imagen hecha con lápiz
+DINERO|Plata
+DOLOR|Lo que se siente al golpearse
+ENEMIGO|Lo contrario de amigo
+ERROR|Equivocación
+EXAMEN|Prueba escolar
+EXITO|Resultado feliz
+FORMA|Figura exterior
+FRASE|Conjunto de palabras con sentido
+FUTURO|Lo que vendrá
+GUERRA|Conflicto armado
+HISTORIA|Estudio del pasado
+HUMOR|Gracia, comicidad
+IDIOMA|Lengua de un país
+IMAGEN|Figura, representación
+INVENTO|Creación nueva
+LECCION|Clase
+LIBERTAD|Lo contrario de esclavitud
+LLEGADA|Fin de un viaje
+LUCHA|Combate
+MAÑANA|Primera parte del día; también el día que viene
+MEMORIA|Capacidad de recordar
+MENSAJE|Comunicación escrita
+MENTIRA|Lo contrario de verdad
+MIRADA|Acción de mirar
+MISTERIO|Algo que no se puede explicar
+MOMENTO|Instante
+MUERTE|Fin de la vida
+NACION|País
+NOMBRE|Cómo se llama alguien
+NOTICIA|Información nueva
+OBJETO|Cosa
+OLVIDO|Pérdida de la memoria
+ORDEN|Lo contrario de caos
+PALABRA|Lo que va en este crucigrama
+PARTIDO|Encuentro deportivo; también agrupación política
+PASADO|Lo que ya ocurrió
+PASEO|Salida para caminar
+PEDIDO|Encargo
+PELIGRO|Riesgo
+PELICULA|Se ve en el cine
+PERSONA|Ser humano
+PREGUNTA|Lo que se responde
+PROBLEMA|Dificultad
+RECUERDO|Lo que queda en la memoria
+RESPUESTA|Lo que contesta una pregunta
+RIESGO|Peligro
+SALIDA|Por donde se sale
+SECRETO|Algo que no se cuenta
+SEÑAL|Aviso, indicio
+SORPRESA|Algo inesperado
+SUERTE|Azar favorable
+TAREA|Deber escolar
+TRABAJO|Empleo
+TRAMPA|Engaño; también artefacto para cazar
+VACACIONES|Descanso del trabajo o la escuela
+VALOR|Coraje; también precio
+VENTAJA|Superioridad
+VERSO|Línea de un poema
+VICTORIA|Triunfo
+VISITA|Persona que llega de afuera
+VUELO|Viaje en avión
+VUELTA|Regreso
+ATLAS|Libro de mapas
+ESPIA|Agente secreto
+FARSA|Engaño
+GRADO|Unidad de temperatura
+ICONO|Imagen que representa algo
+KARATE|Arte marcial de golpes
+MOTOR|Hace andar un vehículo
+NIVEL|Altura, grado
+OPALO|Piedra preciosa iridiscente
+OSADO|Atrevido
+PACTO|Acuerdo
+RADAR|Detecta aviones
+SUSHI|Comida japonesa de arroz y pescado
+TALCO|Polvo blanco para el cuerpo
+TAPIR|Mamífero de trompa corta
+TEXTO|Conjunto de palabras escritas
+TRONO|Asiento del rey
+UNIDAD|Cantidad tomada como uno
+UTIL|Que sirve
+DOLAR|Moneda de Estados Unidos
+LIBRA|Moneda británica; también signo del zodíaco
+ARIES|Primer signo del zodíaco
+TAURO|Signo del toro
+VIRGO|Signo zodiacal de septiembre
+PISCIS|Signo de los peces
+ACUARIO|Signo del aguatero; también pecera
+VIOLETA|Color de las berenjenas
+CELESTE|Color de la bandera argentina
+MARRON|Color del chocolate
+DORADO|Color del oro
+PLATEADO|Color de la plata
+TURQUESA|Azul verdoso
+BORDO|Color del vino tinto
+CUATRO|Tres más uno
+CINCO|Dedos de una mano
+SIETE|Días de la semana
+NUEVE|Uno menos que diez
+QUINCE|Edad de la gran fiesta
+VEINTE|Dos decenas
+DOCENA|Doce unidades
+MITAD|Una de dos partes iguales
+DOBLE|Dos veces
+TRIPLE|Tres veces`.split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
 
-/* ---------- Generador con semilla ---------- */
+/* ---------- Generador de tablero cuadrado ---------- */
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 function shuffle(arr, rnd){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
 
-function tryGen(seed, minWords){
+const GRID = 15;
+
+function tryGen(seed, N){
   const rnd = mulberry32(seed);
-  const pool = shuffle(BANK.slice(), rnd);
-  const N = 19, MAX = 11, TARGET = 13;
+  const pool = shuffle(BANK.filter(x => x.w.length <= N), rnd);
   const g = Array.from({length:N}, () => Array(N).fill(""));
   const gd = Array.from({length:N}, () => Array.from({length:N}, () => ({a:false, d:false})));
-  const letters = [];
+  const byLetter = new Map();
   const placed = [];
   const used = new Set();
-  let b = null;
+  const at = (r, c) => (r >= 0 && c >= 0 && r < N && c < N) ? g[r][c] : "";
 
   function fits(word, sr, sc, dir){
     const dr = dir === "d" ? 1 : 0, dc = dir === "a" ? 1 : 0, L = word.length;
     const er = sr + dr*(L-1), ec = sc + dc*(L-1);
-    if (sr < 0 || sc < 0 || er >= N || ec >= N) return null;
-    const br = sr - dr, bc = sc - dc, ar = er + dr, ac = ec + dc;
-    if (br >= 0 && bc >= 0 && g[br][bc]) return null;
-    if (ar < N && ac < N && g[ar][ac]) return null;
+    if (sr < 0 || sc < 0 || er >= N || ec >= N) return -1;
+    if (at(sr - dr, sc - dc) || at(er + dr, ec + dc)) return -1;
     let inter = 0;
     for (let i = 0; i < L; i++){
       const r = sr + dr*i, c = sc + dc*i, ch = g[r][c];
       if (ch){
-        if (ch !== word[i] || gd[r][c][dir]) return null;
+        if (ch !== word[i] || gd[r][c][dir]) return -1;
         inter++;
-      } else {
-        const r1 = r + dc, c1 = c + dr, r2 = r - dc, c2 = c - dr;
-        if (r1 < N && c1 < N && g[r1][c1]) return null;
-        if (r2 >= 0 && c2 >= 0 && g[r2][c2]) return null;
-      }
+      } else if (at(r + dc, c + dr) || at(r - dc, c - dr)) return -1;
     }
-    if (b && inter === 0) return null;
-    const nb = b ? { r0: Math.min(b.r0, sr), r1: Math.max(b.r1, er), c0: Math.min(b.c0, sc), c1: Math.max(b.c1, ec) } : { r0: sr, r1: er, c0: sc, c1: ec };
-    const h = nb.r1 - nb.r0 + 1, w = nb.c1 - nb.c0 + 1;
-    if (h > MAX || w > MAX) return null;
-    return { inter, size: Math.max(h, w), area: h*w, nb };
+    return inter === L ? -1 : inter;
   }
-  function put(item, sr, sc, dir, nb){
+  function put(item, sr, sc, dir){
     const dr = dir === "d" ? 1 : 0, dc = dir === "a" ? 1 : 0;
     for (let i = 0; i < item.w.length; i++){
       const r = sr + dr*i, c = sc + dc*i;
-      if (!g[r][c]){ g[r][c] = item.w[i]; letters.push([r, c]); }
+      if (!g[r][c]){
+        g[r][c] = item.w[i];
+        if (!byLetter.has(item.w[i])) byLetter.set(item.w[i], []);
+        byLetter.get(item.w[i]).push([r, c]);
+      }
       gd[r][c][dir] = true;
     }
     placed.push({ w: item.w, c: item.c, r: sr, col: sc, dir });
-    used.add(item.w); b = nb;
+    used.add(item.w);
   }
 
-  const fi = pool.findIndex(x => x.w.length >= 6 && x.w.length <= 8);
-  const first = pool[fi];
-  const c0 = Math.floor((N - first.w.length) / 2);
-  put(first, 9, c0, "a", fits(first.w, 9, c0, "a").nb);
+  // Arranque: una palabra larga atravesando el medio
+  const longs = pool.filter(x => x.w.length >= N - 3);
+  const first = longs.length ? longs[0] : pool[0];
+  const r0 = Math.floor(N / 2) + (rnd() < .5 ? -1 : 0);
+  put(first, r0, Math.floor((N - first.w.length) / 2), "a");
 
-  for (const item of pool){
-    if (placed.length >= TARGET) break;
-    if (used.has(item.w) || item.w.length > MAX) continue;
-    let best = null;
-    for (let i = 0; i < item.w.length; i++){
-      for (const [r, c] of letters){
-        if (g[r][c] !== item.w[i]) continue;
-        for (const dir of ["a", "d"]){
-          if (gd[r][c][dir]) continue;
-          const sr = dir === "d" ? r - i : r, sc = dir === "a" ? c - i : c;
-          const res = fits(item.w, sr, sc, dir);
-          if (!res) continue;
-          const score = res.inter*10 - res.size*2 - res.area*0.05 + rnd()*3;
-          if (!best || score > best.score) best = { sr, sc, dir, score, nb: res.nb };
+  for (let pass = 0; pass < 3; pass++){
+    let added = 0;
+    for (const item of pool){
+      if (used.has(item.w)) continue;
+      const w = item.w;
+      let best = null;
+      for (let i = 0; i < w.length; i++){
+        const cells = byLetter.get(w[i]); if (!cells) continue;
+        for (const [r, c] of cells){
+          for (const dir of ["a", "d"]){
+            if (gd[r][c][dir]) continue;
+            const sr = dir === "d" ? r - i : r, sc = dir === "a" ? c - i : c;
+            const inter = fits(w, sr, sc, dir);
+            if (inter < 1) continue;
+            // Premia cruces y llegar a los bordes, para llenar el cuadrado
+            const er = dir === "d" ? sr + w.length - 1 : sr, ec = dir === "a" ? sc + w.length - 1 : sc;
+            const edge = (sr === 0 || sc === 0 || er === N - 1 || ec === N - 1) ? 1.5 : 0;
+            const score = inter * 4 + edge + w.length * 0.15 + rnd() * 1.5;
+            if (!best || score > best.score) best = { sr, sc, dir, score };
+          }
         }
       }
+      if (best){ put(item, best.sr, best.sc, best.dir); added++; }
     }
-    if (best) put(item, best.sr, best.sc, best.dir, best.nb);
+    if (!added) break;
   }
-  if (placed.length < minWords) return null;
+  return { N, placed, g };
+}
 
-  const rows = b.r1 - b.r0 + 1, cols = b.c1 - b.c0 + 1;
-  for (const p of placed){ p.r -= b.r0; p.col -= b.c0; }
+function finalize(t){
+  const { N, placed } = t;
   placed.sort((x, y) => x.r - y.r || x.col - y.col);
   const numAt = {}; let n = 0;
   for (const p of placed){ const k = p.r + "," + p.col; if (!numAt[k]) numAt[k] = ++n; p.num = numAt[k]; }
@@ -567,19 +1705,26 @@ function tryGen(seed, minWords){
     for (let i = 0; i < p.w.length; i++) cells.push([p.r + (p.dir === "d" ? i : 0), p.col + (p.dir === "a" ? i : 0)]);
     return { id, ans: p.w, clue: p.c, num: p.num, dir: p.dir, cells };
   });
-  const sol = Array.from({length:rows}, () => Array(cols).fill(""));
-  const num = Array.from({length:rows}, () => Array(cols).fill(0));
-  const cw = Array.from({length:rows}, () => Array.from({length:cols}, () => ({a:-1, d:-1})));
+  const sol = Array.from({length:N}, () => Array(N).fill(""));
+  const num = Array.from({length:N}, () => Array(N).fill(0));
+  const cw = Array.from({length:N}, () => Array.from({length:N}, () => ({a:-1, d:-1})));
   for (const w of words){
     w.cells.forEach(([r, c], i) => { sol[r][c] = w.ans[i]; cw[r][c][w.dir] = w.id; });
-    const [r0, c0b] = w.cells[0]; num[r0][c0b] = w.num;
+    num[w.cells[0][0]][w.cells[0][1]] = w.num;
   }
-  return { rows, cols, sol, num, cw, words };
+  return { rows: N, cols: N, sol, num, cw, words };
 }
+
+/* Varios intentos con la misma semilla; se queda con el que tiene más palabras. */
 function generate(seed){
-  for (let k = 0; k < 25; k++){ const p = tryGen((seed + k*7919) >>> 0, 10); if (p) return p; }
-  for (let k = 0; k < 25; k++){ const p = tryGen((seed + k*104729) >>> 0, 6); if (p) return p; }
-  return tryGen(seed >>> 0, 1);
+  let best = null;
+  for (let k = 0; k < 10; k++){
+    const t = tryGen((seed + k * 7919) >>> 0, GRID);
+    const fill = t.g.reduce((s, row) => s + row.filter(Boolean).length, 0);
+    const score = t.placed.length * 10 + fill * 0.1;
+    if (!best || score > best.score) best = { t, score };
+  }
+  return finalize(best.t);
 }
 
 /* ---------- Estado ---------- */
@@ -813,7 +1958,7 @@ function hostGone(){
 /* ---------- Solo ---------- */
 function startSolo(){
   S.mode = "solo"; S.rivalName = ""; S.owners = {}; S.seq = 0; S.claims = new Set();
-  S.game = { id: rid(), seed: randSeed(), dur: 300, st: "cd", t: 3 };
+  S.game = { id: rid(), seed: randSeed(), dur: 600, st: "cd", t: 3 };
   loadPuzzle(); S.cdEnd = Date.now() + 3000;
   showScreen("game"); renderGame();
 }
