@@ -45,7 +45,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);fo
   -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:3px solid var(--you);outline-offset:2px}
-.wrap{max-width:1040px;margin:0 auto}
+.wrap{max-width:1240px;margin:0 auto}
+#lobby,#wait{max-width:1040px;width:100%;margin-inline:auto}
 .screen{display:flex;flex-direction:column;gap:18px}
 
 /* brand */
@@ -99,7 +100,7 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .clock.low{color:var(--bad)}
 
 .game-grid{display:grid;grid-template-columns:1fr;gap:16px}
-@media (min-width:860px){.game-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+@media (min-width:900px){.game-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}}
 .play{display:flex;flex-direction:column;gap:12px;min-width:0}
 .board-wrap{display:flex;justify-content:center}
 @media (max-width:540px){.board-wrap{margin-left:calc(4px - max(16px,env(safe-area-inset-left,0px)));margin-right:calc(4px - max(16px,env(safe-area-inset-right,0px)))}}
@@ -135,12 +136,24 @@ body.touch .kbd{display:flex}
 .hint{color:var(--muted);font-size:13px;margin:0;text-align:center}
 body.touch .hint{display:none}
 
-.clues{display:grid;grid-template-columns:1fr;gap:14px;min-width:0}
-@media (min-width:520px){.clues{grid-template-columns:1fr 1fr}}
-@media (min-width:860px){.clues{grid-template-columns:1fr}}
-.clues h3{margin:0 0 6px;font-family:var(--f-display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.clues{min-width:0}
+.clues-in{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:520px){.clues-in{grid-template-columns:1fr 1fr}}
+.clue-col{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.clue-col h3{margin:0;padding:10px 12px 8px;border-bottom:1px solid var(--line);font-family:var(--f-display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.clue-col h3 small{font-family:var(--f-body);font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--muted);font-variant-numeric:tabular-nums}
+.clue-scroll{position:relative;padding:6px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.clue-scroll::-webkit-scrollbar{width:10px}
+.clue-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;border:2px solid var(--surface)}
+/* En escritorio cada columna mide lo mismo que el tablero y se desplaza sola */
+@media (min-width:900px){
+  .clues{position:relative;min-height:0}
+  .clues-in{position:absolute;inset:0}
+  .clue-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .board{width:min(100%,calc(var(--cols) * 40px),max(380px,calc(100vh - 250px)))}
+}
 .clues ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.clues li button{width:100%;text-align:left;border:0;background:transparent;border-radius:var(--r);padding:6px 8px;display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:baseline}
+.clues li button{width:100%;text-align:left;border:0;background:transparent;border-radius:var(--r);padding:6px 8px;display:grid;grid-template-columns:24px 1fr auto;gap:6px;align-items:baseline;line-height:1.3}
 .clues li button:hover{background:var(--word)}
 .clues li.active button{background:var(--word)}
 .clues .num{font-weight:700;font-variant-numeric:tabular-nums}
@@ -254,10 +267,10 @@ body.touch .hint{display:none}
         <div class="kbd" id="kbd"></div>
         <p class="hint">Escribí con el teclado · Espacio cambia la dirección · Tab salta de palabra</p>
       </div>
-      <div class="clues">
-        <div><h3>Horizontales</h3><ol id="listA"></ol></div>
-        <div><h3>Verticales</h3><ol id="listD"></ol></div>
-      </div>
+      <div class="clues"><div class="clues-in">
+        <section class="clue-col" aria-labelledby="hA"><h3 id="hA">Horizontales <small id="cntA"></small></h3><div class="clue-scroll" id="scrollA"><ol id="listA"></ol></div></section>
+        <section class="clue-col" aria-labelledby="hD"><h3 id="hD">Verticales <small id="cntD"></small></h3><div class="clue-scroll" id="scrollD"><ol id="listD"></ol></div></section>
+      </div></div>
     </div>
     <div class="row"><button class="btn ghost" id="btnLeaveGame">Abandonar</button></div>
   </section>
@@ -1976,6 +1989,7 @@ function loadPuzzle(){
 let cellEls = [];
 function buildBoard(){
   const P = S.P, bd = $("board");
+  lastActive = -1; $("scrollA").scrollTop = 0; $("scrollD").scrollTop = 0;
   bd.textContent = ""; bd.style.setProperty("--cols", P.cols); bd.style.setProperty("--rows", P.rows);
   cellEls = [];
   for (let r = 0; r < P.rows; r++){
@@ -2010,6 +2024,18 @@ function isLockedCell(r, c){ const cw = S.P.cw[r][c]; return isLockedWord(cw.a) 
 function letterAt(r, c){ return isLockedCell(r, c) ? S.P.sol[r][c] : S.entries[r][c]; }
 function curWord(){ if (!S.sel) return null; const cw = S.P.cw[S.sel.r][S.sel.c]; const id = cw[S.sel.dir]; return id >= 0 ? S.P.words[id] : null; }
 
+let lastActive = -1;
+/* Lleva la pista activa a la vista dentro de su columna, sin mover la página */
+function revealClue(w){
+  const box = $(w.dir === "a" ? "scrollA" : "scrollD");
+  const li = box.querySelector('li[data-w="' + w.id + '"]');
+  if (!li || box.scrollHeight <= box.clientHeight + 1) return;
+  const top = li.offsetTop, h = li.offsetHeight;
+  if (top < box.scrollTop + 8 || top + h > box.scrollTop + box.clientHeight - 8){
+    const smooth = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    box.scrollTo({ top: Math.max(0, top - box.clientHeight / 3), behavior: smooth ? "smooth" : "auto" });
+  }
+}
 function renderGame(){
   if (!S.P || !S.game) return;
   const me = myKey(), solo = S.mode === "solo";
@@ -2049,11 +2075,16 @@ function renderGame(){
     $("clueTag").textContent = w.num + " " + (w.dir === "a" ? "Horizontal" : "Vertical") + " · " + w.ans.length + " letras" + (o ? (o === me ? " · tuya" : " · de " + (S.rivalName || "tu rival")) : "");
     $("clueQ").textContent = w.clue;
   }
+  const left = { a: 0, d: 0 }, tot = { a: 0, d: 0 };
   document.querySelectorAll(".clues li").forEach(li => {
-    const id = +li.dataset.w, o = ownerOf(id);
+    const id = +li.dataset.w, o = ownerOf(id), dir = S.P.words[id].dir;
     li.classList.toggle("me", o === me); li.classList.toggle("rv", !!o && o !== me);
     li.classList.toggle("active", !!w && w.id === id);
+    tot[dir]++; if (!o) left[dir]++;
   });
+  $("cntA").textContent = left.a ? "faltan " + left.a : "completas";
+  $("cntD").textContent = left.d ? "faltan " + left.d : "completas";
+  if (w && w.id !== lastActive){ lastActive = w.id; revealClue(w); }
   if (st === "end") showResult(); else $("resOverlay").hidden = true;
 }
 
