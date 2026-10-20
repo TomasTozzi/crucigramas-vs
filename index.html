@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Crucigramas VS</title>
+<meta name="description" content="Duelo de crucigramas en tiempo real: los dos juegan el mismo tablero y cada palabra es de quien la completa primero.">
+<meta property="og:title" content="Crucigramas VS">
+<meta property="og:description" content="Te desafiaron a un duelo de crucigramas. Gana quien complete más palabras.">
+<meta name="theme-color" content="#2754D8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='32' height='64' rx='8' fill='%232754D8'/%3E%3Crect x='32' width='32' height='64' rx='8' fill='%23D9690B'/%3E%3Crect x='24' width='16' height='64' fill='%23D9690B'/%3E%3Crect x='24' width='8' height='64' fill='%232754D8'/%3E%3Ctext x='32' y='45' font-family='Arial Black,Arial' font-weight='900' font-size='30' fill='%23fff' text-anchor='middle'%3EVS%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@600;800&display=swap">
+<style>
+/* Layout: one-column duel console on phones (scoreboard, board, clue bar, keypad); board + clue columns on desktop */
+:root{
+  --bg:#E8EBF1; --surface:#FFFFFF; --ink:#131A2B; --muted:#58627A; --line:#C6CEDB;
+  --you:#2754D8; --you-soft:#D4DFFF; --rival:#D9690B; --rival-soft:#FFE0C2;
+  --sel:#FFD84D; --word:#DCE2EE; --bad:#D23434; --key:#D9DEE8;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:6px;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
+  --you:#7D9CFF; --you-soft:#22336A; --rival:#FFA24D; --rival-soft:#553413;
+  --sel:#8C7212; --word:#263049; --bad:#FF6B6B; --key:#232C44; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
+  --you:#7D9CFF; --you-soft:#22336A; --rival:#FFA24D; --rival-soft:#553413;
+  --sel:#8C7212; --word:#263049; --bad:#FF6B6B; --key:#232C44; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 28px;
+  -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--you);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto}
+.screen{display:flex;flex-direction:column;gap:18px}
+
+/* brand */
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:clamp(40px,10vw,64px);line-height:.9;letter-spacing:.01em;margin:0;text-transform:uppercase}
+.vs{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,7vw,42px);line-height:1;display:inline-flex}
+.vs span{padding:2px 8px;color:#fff}
+.vs span:first-child{background:var(--you);border-radius:var(--r) 0 0 var(--r)}
+.vs span:last-child{background:var(--rival);border-radius:0 var(--r) var(--r) 0}
+.lede{margin:0;color:var(--muted);max-width:56ch;text-wrap:pretty}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.02em}
+.label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > input{flex:1 1 140px}
+.btn{border:0;border-radius:var(--r);padding:11px 16px;font-weight:700;background:var(--key);color:var(--ink)}
+.btn.primary{background:var(--you);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.lobby-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:760px){.lobby-grid{grid-template-columns:1.2fr 1fr}}
+.stack{display:flex;flex-direction:column;gap:14px}
+.empty{color:var(--muted);margin:0}
+.notice{border-left:4px solid var(--rival);background:var(--rival-soft);padding:10px 12px;border-radius:0 var(--r) var(--r) 0;margin:0}
+.invite{border-left:4px solid var(--you);background:var(--you-soft);padding:12px 14px;border-radius:0 var(--r) var(--r) 0;margin:0;font-weight:700}
+.rules{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+
+/* wait */
+.code-big{font-family:var(--f-display);font-weight:800;font-size:clamp(56px,16vw,96px);letter-spacing:.12em;line-height:1}
+.players{display:flex;flex-direction:column;gap:8px}
+.player{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);background:var(--bg)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.dot.you{background:var(--you)} .dot.rv{background:var(--rival)}
+.dot.off{background:transparent;border:2px dashed var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:8px 14px;font-weight:700}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* game */
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.side{display:flex;flex-direction:column;min-width:0}
+.side.rv{align-items:flex-end;text-align:right}
+.side .nm{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.side .pts{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.side.you .pts{color:var(--you)} .side.rv .pts{color:var(--rival)}
+.clock{font-family:var(--f-display);font-weight:600;font-size:30px;font-variant-numeric:tabular-nums;text-align:center;line-height:1}
+.clock small{display:block;font-family:var(--f-body);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.clock.low{color:var(--bad)}
+
+.game-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:860px){.game-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.play{display:flex;flex-direction:column;gap:12px;min-width:0}
+.board-wrap{display:flex;justify-content:center}
+.board{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:3px;width:min(100%,calc(var(--cols) * 44px));aspect-ratio:var(--cols)/var(--rows);container-type:inline-size;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cell{position:relative;border-radius:4px;background:var(--surface);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(100cqw / var(--cols) * .52);line-height:1;text-transform:uppercase;cursor:pointer;transition:background-color .12s}
+.cell.void{background:transparent;border:0;cursor:default}
+.cell .n{position:absolute;top:1px;left:2px;font-size:calc(100cqw / var(--cols) * .25);font-weight:700;color:var(--muted)}
+.cell.inword{background:var(--word)}
+.cell.own-me{background:var(--you-soft);border-color:var(--you)}
+.cell.own-rv{background:var(--rival-soft);border-color:var(--rival)}
+.cell.own-split{background:linear-gradient(135deg,var(--you-soft) 50%,var(--rival-soft) 50%);border-color:var(--line)}
+.cell.pend{background:var(--you-soft);border-style:dashed;border-color:var(--you);animation:pulse 1s ease-in-out infinite}
+.cell.sel{background:var(--sel);border-color:var(--ink)}
+.cell.bad{color:var(--bad);animation:shake .35s}
+.cell.flash{animation:pop .45s}
+@keyframes pulse{50%{opacity:.6}}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes pop{40%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.cell,.cell.pend,.cell.bad,.cell.flash{animation:none;transition:none}}
+
+.cluebar{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;align-items:stretch}
+.cluebar button.nav{border:0;border-radius:var(--r);background:var(--key);font-size:20px;font-weight:700}
+.cluebar .txt{border:0;text-align:left;background:var(--word);border-radius:var(--r);padding:8px 12px;min-height:52px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.cluebar .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cluebar .q{font-weight:700;overflow-wrap:anywhere}
+
+.kbd{display:none;flex-direction:column;gap:6px}
+body.touch .kbd{display:flex}
+.krow{display:flex;gap:4px;justify-content:center}
+.k{flex:1 1 0;min-width:0;max-width:44px;height:46px;border:0;border-radius:var(--r);background:var(--key);font-weight:700;font-size:17px;touch-action:manipulation}
+.k.wide{max-width:66px;flex-grow:1.6;font-size:14px}
+.k:active{background:var(--sel)}
+.hint{color:var(--muted);font-size:13px;margin:0;text-align:center}
+body.touch .hint{display:none}
+
+.clues{display:grid;grid-template-columns:1fr;gap:14px;min-width:0}
+@media (min-width:520px){.clues{grid-template-columns:1fr 1fr}}
+@media (min-width:860px){.clues{grid-template-columns:1fr}}
+.clues h3{margin:0 0 6px;font-family:var(--f-display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.clues ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.clues li button{width:100%;text-align:left;border:0;background:transparent;border-radius:var(--r);padding:6px 8px;display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:baseline}
+.clues li button:hover{background:var(--word)}
+.clues li.active button{background:var(--word)}
+.clues .num{font-weight:700;font-variant-numeric:tabular-nums}
+.clues .len{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.clues li.me .cl,.clues li.rv .cl{text-decoration:line-through;text-decoration-thickness:2px}
+.clues li.me .cl{text-decoration-color:var(--you)} .clues li.rv .cl{text-decoration-color:var(--rival)}
+.clues li.me .num{color:var(--you)} .clues li.rv .num{color:var(--rival)}
+
+/* overlays */
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-left,0px));z-index:20}
+.cd{font-family:var(--f-display);font-weight:800;font-size:min(40vw,220px);line-height:1;color:var(--ink)}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px;text-align:center}
+.modal h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:44px;text-transform:uppercase;line-height:1}
+.final{display:flex;justify-content:center;align-items:center;gap:18px;font-family:var(--f-display);font-weight:800;font-size:56px;font-variant-numeric:tabular-nums}
+.final .you{color:var(--you)} .final .rv{color:var(--rival)} .final .sep{color:var(--muted);font-size:28px}
+.modal p{margin:0;color:var(--muted)}
+.modal .row{justify-content:center}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LOBBY -->
+  <section class="screen" id="lobby">
+    <header class="brand">
+      <h1>Crucigramas</h1>
+      <div class="vs" aria-label="versus"><span>V</span><span>S</span></div>
+    </header>
+    <p class="lede">Duelo en tiempo real: los dos juegan el mismo crucigrama y cada palabra es de quien la completa primero. Gana quien junte más palabras antes de que se acabe el tiempo.</p>
+
+    <div class="lobby-grid">
+      <div class="panel">
+        <p class="invite" id="inviteNote" hidden></p>
+        <div class="field">
+          <label class="label" for="nick">Tu nombre</label>
+          <input type="text" id="nick" maxlength="20" autocomplete="off" placeholder="Cómo te ve tu rival">
+        </div>
+        <p class="notice" id="noNet" hidden>No se pudo cargar el modo duelo. Revisá tu conexión a internet y recargá la página. Mientras tanto podés practicar solo.</p>
+        <div class="stack" id="duelControls">
+          <button class="btn primary" id="btnCreate">Crear sala de duelo</button>
+          <div class="field">
+            <label class="label" for="joinCode">Unirte con código</label>
+            <div class="row">
+              <input type="text" id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Ej: K7QM" style="text-transform:uppercase;letter-spacing:.12em">
+              <button class="btn" id="btnJoin">Unirme</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn ghost" id="btnSolo">Practicar solo · 5 min</button>
+      </div>
+
+      <div class="panel">
+        <h2>Cómo se juega</h2>
+        <ul class="rules">
+          <li>Uno crea la sala y le pasa el link o el código de 4 letras al otro.</li>
+          <li>Los dos ven el mismo tablero.</li>
+          <li>Tus letras a medio escribir son privadas; tu rival solo ve las palabras que completás.</li>
+          <li>Una palabra completa queda fija con el color de quien la ganó.</li>
+          <li>Las letras incorrectas no restan.</li>
+          <li>Empate en palabras: gana quien llegó primero a ese puntaje.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAIT -->
+  <section class="screen" id="wait" hidden>
+    <div class="panel">
+      <span class="label">Código de sala</span>
+      <div class="code-big" id="waitCode">····</div>
+      <div class="row" id="shareRow">
+        <button class="btn primary" id="btnShare">Invitar con link</button>
+        <button class="btn" id="btnCopy">Copiar código</button>
+      </div>
+      <p class="empty" id="waitHelp"></p>
+      <div class="players">
+        <div class="player"><span class="dot you"></span><strong id="waitMe">Vos</strong></div>
+        <div class="player"><span class="dot off" id="waitRvDot"></span><span id="waitRv">Esperando rival…</span></div>
+      </div>
+      <div id="hostOpts" class="field" hidden>
+        <span class="label">Duración</span>
+        <div class="chips" id="durChips">
+          <button class="chip" data-dur="300" aria-pressed="false">5 min</button>
+          <button class="chip" data-dur="600" aria-pressed="true">10 min</button>
+          <button class="chip" data-dur="900" aria-pressed="false">15 min</button>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnStart" hidden disabled>Empezar duelo</button>
+        <button class="btn ghost" id="btnLeaveWait">Salir</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen" id="game" hidden>
+    <div class="score">
+      <div class="side you"><span class="nm" id="nmMe">Vos</span><span class="pts" id="ptsMe">0</span></div>
+      <div class="clock" id="clock">0:00<small id="clockSub">restante</small></div>
+      <div class="side rv"><span class="nm" id="nmRv">Rival</span><span class="pts" id="ptsRv">0</span></div>
+    </div>
+    <div class="game-grid">
+      <div class="play">
+        <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="Crucigrama"></div></div>
+        <div class="cluebar">
+          <button class="nav" id="prevW" aria-label="Palabra anterior">‹</button>
+          <button class="txt" id="clueTxt" aria-label="Cambiar dirección"><span class="tag" id="clueTag"></span><span class="q" id="clueQ"></span></button>
+          <button class="nav" id="nextW" aria-label="Palabra siguiente">›</button>
+        </div>
+        <div class="kbd" id="kbd"></div>
+        <p class="hint">Escribí con el teclado · Espacio cambia la dirección · Tab salta de palabra</p>
+      </div>
+      <div class="clues">
+        <div><h3>Horizontales</h3><ol id="listA"></ol></div>
+        <div><h3>Verticales</h3><ol id="listD"></ol></div>
+      </div>
+    </div>
+    <div class="row"><button class="btn ghost" id="btnLeaveGame">Abandonar</button></div>
+  </section>
+</div>
+
+<div class="overlay" id="cdOverlay" hidden><div class="cd" id="cdNum">3</div></div>
+<div class="overlay" id="resOverlay" hidden>
+  <div class="modal" role="dialog" aria-labelledby="resTitle">
+    <h2 id="resTitle">¡Ganaste!</h2>
+    <div class="final" id="resFinal"></div>
+    <p id="resSub"></p>
+    <div class="row" id="resBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ---------- Banco de palabras ---------- */
+const BANK = `CASA|Edificio para habitar
+PERRO|El mejor amigo del hombre, según el dicho
+GATO|Felino doméstico
+SOL|Estrella central de nuestro sistema
+LUNA|Satélite natural de la Tierra
+MAR|Gran masa de agua salada
+RIO|Corriente de agua que desemboca en el mar
+ARBOL|Planta de tronco leñoso
+FLOR|Parte de la planta que da color y perfume
+LIBRO|Hojas impresas y encuadernadas
+MESA|Mueble con patas y tablero
+SILLA|Asiento con respaldo para una persona
+PAN|Se hace con harina, agua y levadura
+QUESO|Derivado lácteo que se estaciona
+LECHE|La da la vaca
+MATE|Infusión de yerba que se comparte
+ASADO|Clásico argentino a la parrilla
+TANGO|Baile porteño por excelencia
+PAMPA|Llanura del centro argentino
+ANDES|Cordillera sudamericana
+PLATA|Metal precioso que nombra a un río
+TREN|Transporte que corre sobre rieles
+AVION|Vehículo con alas y turbinas
+BARCO|Embarcación grande
+RELOJ|Instrumento que marca la hora
+PIANO|Instrumento de teclas blancas y negras
+GUITARRA|Instrumento de seis cuerdas
+NUBE|Masa de vapor en el cielo
+LLUVIA|Agua que cae de las nubes
+NIEVE|Agua helada que cae en copos
+VIENTO|Aire en movimiento
+FUEGO|Llama que da calor
+AGUA|Su fórmula es H2O
+TIERRA|Tercer planeta desde el Sol
+MARTE|El planeta rojo
+ESTRELLA|Astro con luz propia
+OCEANO|Masa de agua mayor que un mar
+ISLA|Tierra rodeada de agua
+PLAYA|Orilla arenosa del mar
+MONTAÑA|Gran elevación del terreno
+VOLCAN|Montaña que puede entrar en erupción
+DESIERTO|Zona árida donde casi no llueve
+SELVA|Bosque tropical muy denso
+LEON|El rey de la selva
+TIGRE|Felino rayado; también una ciudad del delta
+OSO|Mamífero grande que hiberna
+LOBO|Pariente salvaje del perro
+ZORRO|Animal astuto de cola peluda
+AGUILA|Ave rapaz de vista aguda
+BUHO|Ave nocturna de ojos grandes
+PEZ|Respira por branquias
+BALLENA|El mayor mamífero marino
+DELFIN|Cetáceo inteligente y juguetón
+PULPO|Molusco de ocho brazos
+CABALLO|Animal de montar
+VACA|Hembra del toro
+OVEJA|Animal que da lana
+CERDO|De él se obtiene el jamón
+POLLO|Cría de la gallina
+HUEVO|Lo pone la gallina
+MANZANA|Fruta que, dicen, le cayó a Newton
+NARANJA|Cítrico que también es un color
+LIMON|Cítrico ácido y amarillo
+UVA|Fruto de la vid
+PERA|Fruta de forma acampanada
+BANANA|Fruta amarilla y alargada
+FRUTILLA|Fruta roja con semillas por fuera
+TOMATE|Base de la salsa para pastas
+PAPA|Tubérculo del puré
+CEBOLLA|Hace llorar al cortarla
+AJO|Bulbo que, dicen, ahuyenta vampiros
+ARROZ|Grano base del sushi
+PASTA|Fideos, ñoquis o ravioles
+PIZZA|Masa con salsa y muzzarella
+EMPANADA|Masa rellena, al horno o frita
+DULCE|Lo contrario de salado
+CAFE|Bebida de granos tostados
+VINO|Bebida de uva fermentada
+CERVEZA|Bebida de malta y lúpulo
+ESCUELA|Lugar donde se aprende
+MAESTRO|Persona que enseña
+MEDICO|Profesional que cura
+HOSPITAL|Donde se atiende a los enfermos
+CIUDAD|Población grande
+PUEBLO|Población chica
+CALLE|Vía urbana
+PLAZA|Espacio público abierto
+PUENTE|Une dos orillas
+TORRE|Construcción alta y angosta
+CASTILLO|Fortaleza de reyes
+REY|Monarca de un reino
+REINA|La pieza más poderosa del ajedrez
+CORONA|La lleva el monarca en la cabeza
+ESPADA|Arma blanca larga
+ESCUDO|Protege del golpe
+DRAGON|Criatura que escupe fuego
+MAGIA|Arte de lo sobrenatural
+SUEÑO|Lo que pasa mientras dormís
+NOCHE|Cuando no hay sol
+DIA|Tiene veinticuatro horas
+SEMANA|Siete días
+MES|Hay doce en un año
+AÑO|Tiene doce meses
+VERANO|La estación más calurosa
+INVIERNO|La estación más fría
+OTOÑO|Estación de hojas caídas
+ROJO|Color de la sangre
+AZUL|Color del cielo despejado
+VERDE|Color del pasto
+NEGRO|Color de la ausencia de luz
+BLANCO|Color de la nieve
+AMARILLO|Color del limón
+NUMERO|Cifra o guarismo
+CERO|Número que no suma nada
+UNO|Primer número natural
+DOS|Un par
+TRES|Cantidad de mosqueteros
+DIEZ|Dedos de las dos manos
+CIEN|Diez veces diez
+MIL|Diez veces cien
+OJO|Órgano de la vista
+OREJA|Parte externa del oído
+NARIZ|Órgano del olfato
+BOCA|Por donde se come
+MANO|Tiene cinco dedos
+PIE|Extremidad sobre la que caminamos
+CORAZON|Órgano que bombea sangre
+CABEZA|Parte superior del cuerpo
+PELO|Crece en la cabeza
+DIENTE|Sirve para masticar
+FUTBOL|Deporte de once contra once
+PELOTA|Objeto redondo para jugar
+GOL|Se grita cuando la pelota entra
+TENIS|Deporte de raqueta y red
+AJEDREZ|Juego del jaque mate
+DADO|Cubo con puntos del uno al seis
+CARTA|Naipe, o mensaje escrito
+JUEGO|Actividad para divertirse
+RISA|Expresión de alegría
+AMIGO|Persona de confianza
+FAMILIA|Padres, hijos y hermanos
+MADRE|Mamá
+PADRE|Papá
+HERMANO|Hijo de los mismos padres
+NIÑO|Persona de pocos años
+ABUELO|Padre del padre o de la madre
+CODIGO|Lo escribe un programador
+PANTALLA|Donde se ve la imagen del monitor
+TECLADO|Sirve para escribir en la compu
+RATON|Roedor chico, o periférico de la compu
+INTERNET|La red de redes
+CORREO|Servicio postal, o email
+TELEFONO|Aparato para llamar
+CAMARA|Aparato para sacar fotos
+FOTO|Imagen capturada con un lente
+MUSICA|El arte de los sonidos
+CANCION|Composición para cantar
+POEMA|Obra en verso
+CINE|El séptimo arte
+TEATRO|Arte escénico
+PINTURA|Arte de los colores sobre tela
+COLOR|Rojo, azul o verde, por ejemplo
+LAPIZ|Tiene mina de grafito
+PAPEL|Hoja para escribir
+TIJERA|Sirve para cortar papel
+LLAVE|Abre una cerradura
+PUERTA|Por donde se entra
+VENTANA|Deja pasar la luz
+CAMA|Mueble para dormir
+COCINA|Donde se prepara la comida
+JARDIN|Espacio con plantas en una casa
+ORO|Metal precioso amarillo
+HIERRO|Metal con el que se hace el acero
+PIEDRA|Roca chica
+ARENA|La hay en la playa y en el desierto
+HIELO|Agua congelada
+VIAJE|Ir de un lugar a otro
+MAPA|Representación de un territorio
+NORTE|Punto cardinal opuesto al sur
+SUR|Punto cardinal de la Patagonia
+ESTE|Punto cardinal por donde sale el sol
+OESTE|Punto cardinal por donde se pone el sol
+TIEMPO|Lo mide el reloj
+HORA|Sesenta minutos
+MINUTO|Sesenta segundos
+ARCO|Lo defiende el arquero
+LIGA|Torneo largo entre equipos
+EQUIPO|Grupo que juega junto
+CAMPEON|Ganador del torneo
+TORTA|Se sopla en los cumpleaños
+FIESTA|Reunión para celebrar
+REGALO|Se entrega envuelto
+ESPEJO|Devuelve tu reflejo
+SOMBRA|Silueta oscura que hace la luz
+BOSQUE|Lugar poblado de árboles
+LAGO|Gran masa de agua dulce rodeada de tierra
+PIRATA|Navegante que asalta barcos
+TESORO|Lo busca el pirata con un mapa
+ROBOT|Máquina programable que imita a una persona
+COHETE|Nave que despega hacia el espacio
+PLANETA|Gira alrededor de una estrella`.trim().split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
+
+/* ---------- Generador con semilla ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function shuffle(arr, rnd){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+
+function tryGen(seed, minWords){
+  const rnd = mulberry32(seed);
+  const pool = shuffle(BANK.slice(), rnd);
+  const N = 19, MAX = 11, TARGET = 13;
+  const g = Array.from({length:N}, () => Array(N).fill(""));
+  const gd = Array.from({length:N}, () => Array.from({length:N}, () => ({a:false, d:false})));
+  const letters = [];
+  const placed = [];
+  const used = new Set();
+  let b = null;
+
+  function fits(word, sr, sc, dir){
+    const dr = dir === "d" ? 1 : 0, dc = dir === "a" ? 1 : 0, L = word.length;
+    const er = sr + dr*(L-1), ec = sc + dc*(L-1);
+    if (sr < 0 || sc < 0 || er >= N || ec >= N) return null;
+    const br = sr - dr, bc = sc - dc, ar = er + dr, ac = ec + dc;
+    if (br >= 0 && bc >= 0 && g[br][bc]) return null;
+    if (ar < N && ac < N && g[ar][ac]) return null;
+    let inter = 0;
+    for (let i = 0; i < L; i++){
+      const r = sr + dr*i, c = sc + dc*i, ch = g[r][c];
+      if (ch){
+        if (ch !== word[i] || gd[r][c][dir]) return null;
+        inter++;
+      } else {
+        const r1 = r + dc, c1 = c + dr, r2 = r - dc, c2 = c - dr;
+        if (r1 < N && c1 < N && g[r1][c1]) return null;
+        if (r2 >= 0 && c2 >= 0 && g[r2][c2]) return null;
+      }
+    }
+    if (b && inter === 0) return null;
+    const nb = b ? { r0: Math.min(b.r0, sr), r1: Math.max(b.r1, er), c0: Math.min(b.c0, sc), c1: Math.max(b.c1, ec) } : { r0: sr, r1: er, c0: sc, c1: ec };
+    const h = nb.r1 - nb.r0 + 1, w = nb.c1 - nb.c0 + 1;
+    if (h > MAX || w > MAX) return null;
+    return { inter, size: Math.max(h, w), area: h*w, nb };
+  }
+  function put(item, sr, sc, dir, nb){
+    const dr = dir === "d" ? 1 : 0, dc = dir === "a" ? 1 : 0;
+    for (let i = 0; i < item.w.length; i++){
+      const r = sr + dr*i, c = sc + dc*i;
+      if (!g[r][c]){ g[r][c] = item.w[i]; letters.push([r, c]); }
+      gd[r][c][dir] = true;
+    }
+    placed.push({ w: item.w, c: item.c, r: sr, col: sc, dir });
+    used.add(item.w); b = nb;
+  }
+
+  const fi = pool.findIndex(x => x.w.length >= 6 && x.w.length <= 8);
+  const first = pool[fi];
+  const c0 = Math.floor((N - first.w.length) / 2);
+  put(first, 9, c0, "a", fits(first.w, 9, c0, "a").nb);
+
+  for (const item of pool){
+    if (placed.length >= TARGET) break;
+    if (used.has(item.w) || item.w.length > MAX) continue;
+    let best = null;
+    for (let i = 0; i < item.w.length; i++){
+      for (const [r, c] of letters){
+        if (g[r][c] !== item.w[i]) continue;
+        for (const dir of ["a", "d"]){
+          if (gd[r][c][dir]) continue;
+          const sr = dir === "d" ? r - i : r, sc = dir === "a" ? c - i : c;
+          const res = fits(item.w, sr, sc, dir);
+          if (!res) continue;
+          const score = res.inter*10 - res.size*2 - res.area*0.05 + rnd()*3;
+          if (!best || score > best.score) best = { sr, sc, dir, score, nb: res.nb };
+        }
+      }
+    }
+    if (best) put(item, best.sr, best.sc, best.dir, best.nb);
+  }
+  if (placed.length < minWords) return null;
+
+  const rows = b.r1 - b.r0 + 1, cols = b.c1 - b.c0 + 1;
+  for (const p of placed){ p.r -= b.r0; p.col -= b.c0; }
+  placed.sort((x, y) => x.r - y.r || x.col - y.col);
+  const numAt = {}; let n = 0;
+  for (const p of placed){ const k = p.r + "," + p.col; if (!numAt[k]) numAt[k] = ++n; p.num = numAt[k]; }
+  const across = placed.filter(p => p.dir === "a").sort((x, y) => x.num - y.num);
+  const down = placed.filter(p => p.dir === "d").sort((x, y) => x.num - y.num);
+  const words = across.concat(down).map((p, id) => {
+    const cells = [];
+    for (let i = 0; i < p.w.length; i++) cells.push([p.r + (p.dir === "d" ? i : 0), p.col + (p.dir === "a" ? i : 0)]);
+    return { id, ans: p.w, clue: p.c, num: p.num, dir: p.dir, cells };
+  });
+  const sol = Array.from({length:rows}, () => Array(cols).fill(""));
+  const num = Array.from({length:rows}, () => Array(cols).fill(0));
+  const cw = Array.from({length:rows}, () => Array.from({length:cols}, () => ({a:-1, d:-1})));
+  for (const w of words){
+    w.cells.forEach(([r, c], i) => { sol[r][c] = w.ans[i]; cw[r][c][w.dir] = w.id; });
+    const [r0, c0b] = w.cells[0]; num[r0][c0b] = w.num;
+  }
+  return { rows, cols, sol, num, cw, words };
+}
+function generate(seed){
+  for (let k = 0; k < 25; k++){ const p = tryGen((seed + k*7919) >>> 0, 10); if (p) return p; }
+  for (let k = 0; k < 25; k++){ const p = tryGen((seed + k*104729) >>> 0, 6); if (p) return p; }
+  return tryGen(seed >>> 0, 1);
+}
+
+/* ---------- Estado ---------- */
+const $ = id => document.getElementById(id);
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k, v){ try { localStorage.setItem(k, v); } catch(e){} } };
+const ID_PREFIX = "crucigramas-vs-";
+const PEER_OPTS = Object.assign({ debug: 0 }, window.__PEER_OPTS || {});
+const HAS_PEER = typeof window.Peer === "function";
+const S = {
+  screen: "lobby", mode: null, name: "", code: "",
+  game: null, P: null, entries: null, owners: {}, seq: 0, claims: new Set(),
+  sel: null, rivalName: "", rivalHere: false, cdEnd: 0, playEnd: 0,
+  hostSeen: false, joinTimer: null, busy: false
+};
+let PEER = null, CONN = null;
+const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+if (isTouch) document.body.classList.add("touch");
+
+function cleanName(x){ return String(x == null ? "" : x).replace(/[\u0000-\u001f\u007f-\u009f­​-‏‪-‮⁠-⁯﻿]/g, "").trim().slice(0, 20); }
+function rid(){ return Math.random().toString(36).slice(2, 10); }
+function randSeed(){ return Math.floor(Math.random() * 2147483647); }
+function genCode(){ const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random()*A.length)]; return s; }
+function cleanCode(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4); }
+function myKey(){ return S.mode === "guest" ? "g" : "h"; }
+function fmt(t){ t = Math.max(0, t|0); return Math.floor(t/60) + ":" + String(t%60).padStart(2, "0"); }
+function inviteUrl(){ const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("sala", S.code); return u.toString(); }
+
+let toastT = null;
+function toast(msg){ const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3000); }
+
+function showScreen(s){
+  S.screen = s;
+  for (const id of ["lobby", "wait", "game"]) $(id).hidden = id !== s;
+  if (s !== "game"){ $("cdOverlay").hidden = true; $("resOverlay").hidden = true; }
+  window.scrollTo(0, 0);
+}
+function setBusy(b){ S.busy = b; $("btnCreate").disabled = b; $("btnJoin").disabled = b; }
+
+/* ---------- Nombre e invitación ---------- */
+S.name = cleanName(store.get("cvs-name")) || ("Jugador " + Math.floor(10 + Math.random()*90));
+$("nick").value = S.name;
+$("nick").addEventListener("input", () => { S.name = cleanName($("nick").value) || "Jugador"; store.set("cvs-name", S.name); });
+$("noNet").hidden = HAS_PEER;
+$("duelControls").hidden = !HAS_PEER;
+const invited = cleanCode(new URLSearchParams(location.search).get("sala"));
+if (invited.length === 4 && HAS_PEER){
+  $("joinCode").value = invited;
+  $("inviteNote").textContent = "Te invitaron a la sala " + invited + ". Poné tu nombre y tocá Unirme.";
+  $("inviteNote").hidden = false;
+}
+
+/* ---------- Conexión (PeerJS) ---------- */
+function openPeer(id){
+  return new Promise((resolve, reject) => {
+    let opened = false;
+    const p = id ? new Peer(id, PEER_OPTS) : new Peer(PEER_OPTS);
+    const t = setTimeout(() => { if (!opened){ try { p.destroy(); } catch(e){} reject({ type: "timeout" }); } }, 12000);
+    p.on("open", () => { opened = true; clearTimeout(t); resolve(p); });
+    p.on("error", err => {
+      if (!opened){ clearTimeout(t); try { p.destroy(); } catch(e){} reject(err); return; }
+      onPeerError(p, err);
+    });
+    p.on("disconnected", () => { if (opened && PEER === p && !p.destroyed) setTimeout(() => { if (PEER === p && !p.destroyed) try { p.reconnect(); } catch(e){} }, 1500); });
+  });
+}
+function onPeerError(p, err){
+  if (PEER !== p) return;
+  const type = err && err.type;
+  if (type === "peer-unavailable" && S.mode === "guest" && !S.hostSeen){
+    leaveRoom(); toast("No encontramos la sala " + S.code + ". Revisá el código o pedile un link nuevo.");
+  }
+}
+function send(msg){ if (CONN && CONN.open){ try { CONN.send(msg); } catch(e){} } }
+
+async function createRoom(){
+  if (!HAS_PEER || S.busy) return;
+  setBusy(true);
+  let p = null, code = "";
+  for (let i = 0; i < 4 && !p; i++){
+    code = genCode();
+    try { p = await openPeer(ID_PREFIX + code.toLowerCase()); }
+    catch(e){ if (!e || e.type !== "unavailable-id") break; }
+  }
+  setBusy(false);
+  if (!p){ toast("No se pudo crear la sala. Revisá tu conexión y probá de nuevo."); return; }
+  PEER = p; S.code = code;
+  S.mode = "host"; S.game = { st: "wait", dur: 600 }; S.rivalHere = false; S.rivalName = ""; S.owners = {}; S.seq = 0;
+  p.on("connection", hostOnConnection);
+  showScreen("wait"); renderWait();
+}
+
+async function joinRoom(raw){
+  if (!HAS_PEER || S.busy) return;
+  const code = cleanCode(raw);
+  if (code.length !== 4){ toast("El código tiene 4 caracteres, por ejemplo K7QM."); return; }
+  setBusy(true);
+  let p = null;
+  try { p = await openPeer(null); } catch(e){}
+  setBusy(false);
+  if (!p){ toast("No se pudo conectar. Revisá tu conexión y probá de nuevo."); return; }
+  PEER = p; S.code = code; S.mode = "guest"; S.game = { st: "wait" }; S.hostSeen = false; S.claims = new Set(); S.owners = {}; S.rivalName = "";
+  const conn = p.connect(ID_PREFIX + code.toLowerCase(), { reliable: true, serialization: "json" });
+  CONN = conn;
+  conn.on("open", () => publishGuest());
+  conn.on("data", d => { if (CONN === conn) guestOnData(d); });
+  conn.on("close", () => { if (CONN === conn) hostGone(); });
+  conn.on("error", () => {});
+  showScreen("wait"); renderWait();
+  S.joinTimer = setTimeout(() => { if (!S.hostSeen && S.mode === "guest" && CONN === conn){ leaveRoom(); toast("No encontramos la sala " + code + ". Revisá el código o pedile un link nuevo."); } }, 15000);
+}
+
+function leaveRoom(){
+  clearTimeout(S.joinTimer);
+  const c = CONN, p = PEER;
+  CONN = null; PEER = null;
+  if (c){ try { if (c.open) c.send({ t: "bye" }); } catch(e){} setTimeout(() => { try { c.close(); } catch(e){} }, 150); }
+  if (p) setTimeout(() => { try { p.destroy(); } catch(e){} }, 300);
+  S.mode = null; S.game = null; S.P = null; S.rivalHere = false; S.claims = new Set(); S.owners = {};
+  showScreen("lobby");
+}
+
+/* ---------- Anfitrión ---------- */
+function hostOnConnection(conn){
+  if (CONN && CONN.open){
+    conn.on("open", () => { try { conn.send({ t: "full" }); } catch(e){} setTimeout(() => { try { conn.close(); } catch(e){} }, 600); });
+    return;
+  }
+  CONN = conn;
+  conn.on("open", () => { if (CONN === conn) publishHost(); });
+  conn.on("data", d => { if (CONN === conn) hostOnData(d); });
+  conn.on("close", () => { if (CONN === conn) hostRivalLeft(); });
+  conn.on("error", () => {});
+}
+function hostOnData(d){
+  if (!d || typeof d !== "object") return;
+  if (d.t === "bye"){ hostRivalLeft(); return; }
+  if (d.t !== "g") return;
+  const was = S.rivalHere;
+  S.rivalHere = true;
+  S.rivalName = cleanName(d.name) || "Rival";
+  let changed = !was;
+  if (S.P && S.game && S.game.st === "play" && d.gid === S.game.id && Array.isArray(d.claims)){
+    for (const idx of d.claims){
+      if (Number.isInteger(idx) && idx >= 0 && idx < S.P.words.length && !S.owners[idx]){
+        S.owners[idx] = { p: "g", n: ++S.seq }; changed = true;
+      }
+    }
+  }
+  if (changed){ publishHost(); checkAllOwned(); }
+  if (!was && S.screen === "game") toast(S.rivalName + " está en la sala");
+  rerender();
+}
+function hostRivalLeft(){
+  const c = CONN; CONN = null;
+  if (c) setTimeout(() => { try { c.close(); } catch(e){} }, 100);
+  if (!S.rivalHere) return;
+  S.rivalHere = false;
+  if (S.screen === "game" && S.game && S.game.st !== "end") toast((S.rivalName || "Tu rival") + " se desconectó. Puede volver con el mismo link.");
+  rerender();
+}
+function publishHost(){
+  if (S.mode !== "host") return;
+  const gm = S.game.st === "wait" ? { st: "wait" } : { id: S.game.id, seed: S.game.seed, dur: S.game.dur, st: S.game.st, t: S.game.t };
+  const own = Object.keys(S.owners).map(k => [+k, S.owners[k].p, S.owners[k].n]);
+  send({ t: "s", name: S.name, game: gm, own });
+}
+function hostStart(){
+  if (!S.rivalHere) return;
+  S.game = { id: rid(), seed: randSeed(), dur: S.game.dur || 600, st: "cd", t: 3 };
+  S.owners = {}; S.seq = 0;
+  loadPuzzle(); S.cdEnd = Date.now() + 3000;
+  publishHost();
+  showScreen("game"); renderGame();
+}
+function checkAllOwned(){
+  if (!S.P || !S.game || S.game.st !== "play") return;
+  if (Object.keys(S.owners).length >= S.P.words.length){ S.game.st = "end"; publishHost(); renderGame(); }
+}
+function tick(){
+  if (!(S.mode === "host" || S.mode === "solo") || !S.game || !S.game.id) return;
+  const now = Date.now(); let t = S.game.t, st = S.game.st;
+  if (st === "cd"){ t = Math.ceil((S.cdEnd - now) / 1000); if (t <= 0){ st = "play"; S.playEnd = now + S.game.dur*1000; t = S.game.dur; } }
+  else if (st === "play"){ t = Math.max(0, Math.ceil((S.playEnd - now) / 1000)); if (t <= 0) st = "end"; }
+  if (t !== S.game.t || st !== S.game.st){ S.game.t = t; S.game.st = st; publishHost(); if (S.screen === "game") renderGame(); }
+}
+setInterval(tick, 200);
+
+/* ---------- Invitado ---------- */
+function publishGuest(){
+  if (S.mode !== "guest") return;
+  send({ t: "g", name: S.name, gid: (S.game && S.game.id) || null, claims: Array.from(S.claims) });
+}
+function guestOnData(d){
+  if (!d || typeof d !== "object") return;
+  if (d.t === "full"){ leaveRoom(); toast("Esa sala ya tiene dos jugadores."); return; }
+  if (d.t === "bye"){ hostGone(); return; }
+  if (d.t !== "s") return;
+  if (!S.hostSeen){ S.hostSeen = true; clearTimeout(S.joinTimer); }
+  S.rivalName = cleanName(d.name) || "Rival"; S.rivalHere = true;
+  const gm = d.game || {};
+  if (gm.st === "wait" || typeof gm.id !== "string"){
+    S.game = { st: "wait" };
+    if (S.screen !== "wait") showScreen("wait");
+    renderWait(); return;
+  }
+  let claimsChanged = false;
+  if (!S.game || gm.id !== S.game.id){
+    S.game = { id: gm.id, seed: (gm.seed >>> 0), dur: +gm.dur || 600, st: gm.st, t: +gm.t || 0 };
+    S.owners = {}; S.claims = new Set(); claimsChanged = true;
+    loadPuzzle(); showScreen("game");
+  } else { S.game.st = gm.st; S.game.t = +gm.t || 0; }
+  const own = {};
+  if (Array.isArray(d.own)) for (const e of d.own){
+    if (Array.isArray(e) && Number.isInteger(e[0]) && e[0] >= 0 && e[0] < S.P.words.length && (e[1] === "h" || e[1] === "g")) own[e[0]] = { p: e[1], n: +e[2] || 0 };
+  }
+  for (const idx of Array.from(S.claims)){
+    if (own[idx]){ S.claims.delete(idx); claimsChanged = true; if (own[idx].p === "h") toast(S.rivalName + " completó " + S.P.words[idx].ans + " antes que vos"); }
+  }
+  S.owners = own;
+  if (claimsChanged) publishGuest();
+  renderGame();
+}
+function hostGone(){
+  if (S.mode !== "guest") return;
+  const name = S.rivalName || "Tu rival";
+  const seen = S.hostSeen;
+  leaveRoom();
+  toast(seen ? name + " cerró la sala o se desconectó." : "No se pudo entrar a la sala.");
+}
+
+/* ---------- Solo ---------- */
+function startSolo(){
+  S.mode = "solo"; S.rivalName = ""; S.owners = {}; S.seq = 0; S.claims = new Set();
+  S.game = { id: rid(), seed: randSeed(), dur: 300, st: "cd", t: 3 };
+  loadPuzzle(); S.cdEnd = Date.now() + 3000;
+  showScreen("game"); renderGame();
+}
+
+function rerender(){ if (S.screen === "wait") renderWait(); else if (S.screen === "game") renderGame(); }
+
+/* ---------- Tablero ---------- */
+function loadPuzzle(){
+  S.P = generate(S.game.seed);
+  S.entries = Array.from({length: S.P.rows}, () => Array(S.P.cols).fill(""));
+  const w0 = S.P.words[0];
+  S.sel = { r: w0.cells[0][0], c: w0.cells[0][1], dir: w0.dir };
+  buildBoard();
+}
+let cellEls = [];
+function buildBoard(){
+  const P = S.P, bd = $("board");
+  bd.textContent = ""; bd.style.setProperty("--cols", P.cols); bd.style.setProperty("--rows", P.rows);
+  cellEls = [];
+  for (let r = 0; r < P.rows; r++){
+    const row = [];
+    for (let c = 0; c < P.cols; c++){
+      const d = document.createElement("div");
+      if (!P.sol[r][c]){ d.className = "cell void"; row.push(null); bd.append(d); continue; }
+      d.className = "cell"; d.dataset.r = r; d.dataset.c = c; d.setAttribute("role", "gridcell");
+      if (P.num[r][c]){ const n = document.createElement("span"); n.className = "n"; n.textContent = P.num[r][c]; d.append(n); }
+      const l = document.createElement("span"); l.className = "l"; d.append(l);
+      row.push({ el: d, l }); bd.append(d);
+    }
+    cellEls.push(row);
+  }
+  for (const [id, dir] of [["listA", "a"], ["listD", "d"]]){
+    const ol = $(id); ol.textContent = "";
+    for (const w of P.words.filter(x => x.dir === dir)){
+      const li = document.createElement("li"); li.dataset.w = w.id;
+      const bt = document.createElement("button");
+      const nm = document.createElement("span"); nm.className = "num"; nm.textContent = w.num;
+      const cl = document.createElement("span"); cl.className = "cl"; cl.textContent = w.clue;
+      const ln = document.createElement("span"); ln.className = "len"; ln.textContent = "(" + w.ans.length + ")";
+      bt.append(nm, cl, ln);
+      bt.addEventListener("click", () => selectWord(w.id));
+      li.append(bt); ol.append(li);
+    }
+  }
+}
+function ownerOf(id){ return S.owners[id] ? S.owners[id].p : null; }
+function isLockedWord(id){ return id >= 0 && (!!S.owners[id] || S.claims.has(id)); }
+function isLockedCell(r, c){ const cw = S.P.cw[r][c]; return isLockedWord(cw.a) || isLockedWord(cw.d); }
+function letterAt(r, c){ return isLockedCell(r, c) ? S.P.sol[r][c] : S.entries[r][c]; }
+function curWord(){ if (!S.sel) return null; const cw = S.P.cw[S.sel.r][S.sel.c]; const id = cw[S.sel.dir]; return id >= 0 ? S.P.words[id] : null; }
+
+function renderGame(){
+  if (!S.P || !S.game) return;
+  const me = myKey(), solo = S.mode === "solo";
+  let mine = 0, theirs = 0;
+  for (const k in S.owners){ if (S.owners[k].p === me) mine++; else theirs++; }
+  $("nmMe").textContent = S.name + " (vos)";
+  $("ptsMe").textContent = mine;
+  $("nmRv").textContent = solo ? "Faltan" : (S.rivalName || "Rival") + (S.rivalHere ? "" : " · desconectado");
+  $("ptsRv").textContent = solo ? (S.P.words.length - mine) : theirs;
+  const st = S.game.st;
+  const clock = $("clock");
+  clock.firstChild.nodeValue = st === "cd" ? fmt(S.game.dur) : fmt(S.game.t);
+  $("clockSub").textContent = st === "end" ? "terminado" : st === "cd" ? "por empezar" : "restante";
+  clock.classList.toggle("low", st === "play" && S.game.t <= 30);
+  $("cdOverlay").hidden = !(st === "cd" && S.screen === "game");
+  $("cdNum").textContent = Math.max(1, S.game.t);
+
+  const w = curWord();
+  const inWord = new Set(w ? w.cells.map(([r, c]) => r + "," + c) : []);
+  for (let r = 0; r < S.P.rows; r++) for (let c = 0; c < S.P.cols; c++){
+    const ce = cellEls[r][c]; if (!ce) continue;
+    const cw = S.P.cw[r][c];
+    const oa = cw.a >= 0 ? ownerOf(cw.a) : null, od = cw.d >= 0 ? ownerOf(cw.d) : null;
+    const hasMe = oa === me || od === me, hasRv = (oa && oa !== me) || (od && od !== me);
+    const pend = !hasMe && !hasRv && (S.claims.has(cw.a) || S.claims.has(cw.d));
+    const el = ce.el;
+    el.classList.toggle("own-split", hasMe && hasRv);
+    el.classList.toggle("own-me", hasMe && !hasRv);
+    el.classList.toggle("own-rv", hasRv && !hasMe);
+    el.classList.toggle("pend", pend);
+    el.classList.toggle("sel", !!S.sel && S.sel.r === r && S.sel.c === c);
+    el.classList.toggle("inword", inWord.has(r + "," + c));
+    ce.l.textContent = letterAt(r, c);
+  }
+  if (w){
+    const o = ownerOf(w.id);
+    $("clueTag").textContent = w.num + " " + (w.dir === "a" ? "Horizontal" : "Vertical") + " · " + w.ans.length + " letras" + (o ? (o === me ? " · tuya" : " · de " + (S.rivalName || "tu rival")) : "");
+    $("clueQ").textContent = w.clue;
+  }
+  document.querySelectorAll(".clues li").forEach(li => {
+    const id = +li.dataset.w, o = ownerOf(id);
+    li.classList.toggle("me", o === me); li.classList.toggle("rv", !!o && o !== me);
+    li.classList.toggle("active", !!w && w.id === id);
+  });
+  if (st === "end") showResult(); else $("resOverlay").hidden = true;
+}
+
+/* ---------- Selección e input ---------- */
+function canPlay(){ return S.screen === "game" && S.game && S.game.st === "play"; }
+function selectCell(r, c, toggle){
+  const cw = S.P.cw[r][c];
+  let dir = S.sel ? S.sel.dir : "a";
+  if (toggle && S.sel && S.sel.r === r && S.sel.c === c){ const o = dir === "a" ? "d" : "a"; if (cw[o] >= 0) dir = o; }
+  else if (cw[dir] < 0) dir = dir === "a" ? "d" : "a";
+  S.sel = { r, c, dir };
+  renderGame();
+}
+function firstOpenCell(w){ return w.cells.find(([r, c]) => !isLockedCell(r, c) && !S.entries[r][c]) || w.cells.find(([r, c]) => !isLockedCell(r, c)) || w.cells[0]; }
+function selectWord(id){ const w = S.P.words[id]; const [r, c] = firstOpenCell(w); S.sel = { r, c, dir: w.dir }; renderGame(); }
+function stepWord(delta){
+  const n = S.P.words.length, w = curWord(); let i = w ? w.id : -1;
+  for (let k = 0; k < n; k++){ i = (i + delta + n) % n; if (!isLockedWord(i)){ selectWord(i); return; } }
+}
+function toggleDir(){ if (!S.sel) return; const o = S.sel.dir === "a" ? "d" : "a"; if (S.P.cw[S.sel.r][S.sel.c][o] >= 0){ S.sel.dir = o; renderGame(); } }
+
+function typeLetter(L){
+  if (!canPlay() || !S.sel) return;
+  const w = curWord(); if (!w) return;
+  const { r, c } = S.sel;
+  if (!isLockedCell(r, c)){ S.entries[r][c] = L; if (checkAt(r, c)) return; }
+  const idx = w.cells.findIndex(([rr, cc]) => rr === r && cc === c);
+  for (let i = idx + 1; i < w.cells.length; i++){
+    const [rr, cc] = w.cells[i];
+    if (!isLockedCell(rr, cc)){ S.sel = { r: rr, c: cc, dir: w.dir }; break; }
+  }
+  renderGame();
+}
+function backspace(){
+  if (!canPlay() || !S.sel) return;
+  const { r, c } = S.sel;
+  if (!isLockedCell(r, c) && S.entries[r][c]){ S.entries[r][c] = ""; renderGame(); return; }
+  const w = curWord(); if (!w) return;
+  const idx = w.cells.findIndex(([rr, cc]) => rr === r && cc === c);
+  for (let i = idx - 1; i >= 0; i--){
+    const [rr, cc] = w.cells[i];
+    if (!isLockedCell(rr, cc)){ S.entries[rr][cc] = ""; S.sel = { r: rr, c: cc, dir: w.dir }; break; }
+  }
+  renderGame();
+}
+function moveArrow(dr, dc){
+  if (!S.sel) return;
+  let r = S.sel.r + dr, c = S.sel.c + dc;
+  while (r >= 0 && c >= 0 && r < S.P.rows && c < S.P.cols){
+    if (S.P.sol[r][c]){ const want = dc ? "a" : "d"; const cw = S.P.cw[r][c]; S.sel = { r, c, dir: cw[want] >= 0 ? want : (want === "a" ? "d" : "a") }; renderGame(); return; }
+    r += dr; c += dc;
+  }
+}
+/* Revisa las palabras que pasan por la celda. Devuelve true si reclamó alguna. */
+function checkAt(r, c){
+  const cw = S.P.cw[r][c]; let claimed = false;
+  for (const dir of ["a", "d"]){
+    const id = cw[dir]; if (id < 0 || isLockedWord(id)) continue;
+    const w = S.P.words[id];
+    if (!w.cells.every(([rr, cc]) => letterAt(rr, cc))) continue;
+    if (w.cells.every(([rr, cc]) => letterAt(rr, cc) === S.P.sol[rr][cc])){ claim(id); claimed = true; }
+    else {
+      w.cells.forEach(([rr, cc]) => { const e = cellEls[rr][cc].el; e.classList.remove("bad"); void e.offsetWidth; e.classList.add("bad"); setTimeout(() => e.classList.remove("bad"), 600); });
+    }
+  }
+  if (claimed){
+    const cur = curWord();
+    if (!cur || isLockedWord(cur.id)) stepWord(1);
+    renderGame();
+  }
+  return claimed;
+}
+function claim(id){
+  const w = S.P.words[id];
+  if (S.mode === "guest"){ S.claims.add(id); publishGuest(); }
+  else { S.owners[id] = { p: "h", n: ++S.seq }; publishHost(); }
+  w.cells.forEach(([rr, cc]) => { const e = cellEls[rr][cc].el; e.classList.remove("flash"); void e.offsetWidth; e.classList.add("flash"); });
+  if (S.mode !== "guest") checkAllOwned();
+}
+
+$("board").addEventListener("pointerdown", e => {
+  const el = e.target.closest(".cell"); if (!el || el.classList.contains("void")) return;
+  e.preventDefault();
+  selectCell(+el.dataset.r, +el.dataset.c, true);
+});
+$("prevW").addEventListener("click", () => stepWord(-1));
+$("nextW").addEventListener("click", () => stepWord(1));
+$("clueTxt").addEventListener("click", toggleDir);
+
+function normKey(k){
+  if (k.length !== 1) return null;
+  let u = k.toUpperCase();
+  if (u === "Ñ") return u;
+  u = u.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return /^[A-Z]$/.test(u) ? u : null;
+}
+document.addEventListener("keydown", e => {
+  if (S.screen !== "game" || !S.P) return;
+  if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const L = normKey(e.key);
+  if (L){ e.preventDefault(); typeLetter(L); return; }
+  switch (e.key){
+    case "Backspace": case "Delete": e.preventDefault(); backspace(); break;
+    case "ArrowLeft": e.preventDefault(); moveArrow(0, -1); break;
+    case "ArrowRight": e.preventDefault(); moveArrow(0, 1); break;
+    case "ArrowUp": e.preventDefault(); moveArrow(-1, 0); break;
+    case "ArrowDown": e.preventDefault(); moveArrow(1, 0); break;
+    case " ": e.preventDefault(); toggleDir(); break;
+    case "Tab": case "Enter": e.preventDefault(); stepWord(e.shiftKey ? -1 : 1); break;
+  }
+});
+
+/* Teclado en pantalla */
+(function buildKbd(){
+  const rows = ["QWERTYUIOP", "ASDFGHJKLÑ", "↔ZXCVBNM⌫"];
+  const kb = $("kbd");
+  for (const row of rows){
+    const d = document.createElement("div"); d.className = "krow";
+    for (const ch of row){
+      const b = document.createElement("button"); b.className = "k"; b.type = "button";
+      if (ch === "⌫"){ b.classList.add("wide"); b.textContent = "⌫"; b.setAttribute("aria-label", "Borrar"); b.addEventListener("pointerdown", e => { e.preventDefault(); backspace(); }); }
+      else if (ch === "↔"){ b.classList.add("wide"); b.textContent = "↔ ↕"; b.setAttribute("aria-label", "Cambiar dirección"); b.addEventListener("pointerdown", e => { e.preventDefault(); toggleDir(); }); }
+      else { b.textContent = ch; b.addEventListener("pointerdown", e => { e.preventDefault(); typeLetter(ch); }); }
+      d.append(b);
+    }
+    kb.append(d);
+  }
+})();
+
+/* ---------- Sala de espera ---------- */
+function renderWait(){
+  const host = S.mode === "host";
+  $("waitCode").textContent = S.code || "····";
+  $("waitMe").textContent = S.name + " (vos)" + (host ? " · anfitrión" : "");
+  $("hostOpts").hidden = !host;
+  $("btnStart").hidden = !host;
+  $("btnStart").disabled = !S.rivalHere;
+  $("shareRow").hidden = !host;
+  if (host){
+    $("waitHelp").textContent = S.rivalHere ? "Tu rival ya está en la sala. Elegí la duración y empezá." : "Mandale el link a tu rival. Al abrirlo entra directo a esta sala. Dejá esta pantalla abierta mientras esperás.";
+    $("waitRv").textContent = S.rivalHere ? S.rivalName : "Esperando rival…";
+  } else {
+    $("waitHelp").textContent = S.hostSeen ? "Estás adentro. Cuando " + S.rivalName + " empiece, arranca la cuenta regresiva." : "Buscando la sala…";
+    $("waitRv").textContent = S.hostSeen ? S.rivalName + " · anfitrión" : "Buscando anfitrión…";
+  }
+  $("waitRvDot").className = "dot " + ((host ? S.rivalHere : S.hostSeen) ? "rv" : "off");
+  const dur = (S.game && S.game.dur) || 600;
+  document.querySelectorAll("#durChips .chip").forEach(ch => ch.setAttribute("aria-pressed", String(+ch.dataset.dur === dur)));
+}
+$("durChips").addEventListener("click", e => {
+  const ch = e.target.closest(".chip"); if (!ch || S.mode !== "host") return;
+  S.game.dur = +ch.dataset.dur; renderWait();
+});
+$("btnStart").addEventListener("click", hostStart);
+$("btnLeaveWait").addEventListener("click", leaveRoom);
+function copyText(text, okMsg){
+  const p = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject();
+  p.then(() => toast(okMsg), () => toast("Copialo a mano: " + text));
+}
+$("btnCopy").addEventListener("click", () => copyText(S.code, "Código copiado"));
+$("btnShare").addEventListener("click", () => {
+  const url = inviteUrl();
+  const data = { title: "Crucigramas VS", text: S.name + " te desafía a un duelo de crucigramas. Sala " + S.code + ":", url };
+  if (navigator.share){ navigator.share(data).catch(err => { if (!err || err.name !== "AbortError") copyText(url, "Link copiado"); }); }
+  else copyText(url, "Link copiado. Mandáselo a tu rival.");
+});
+
+/* ---------- Resultado ---------- */
+function showResult(){
+  const me = myKey();
+  let mine = 0, theirs = 0, lastMe = 0, lastRv = 0;
+  for (const k in S.owners){ const o = S.owners[k]; if (o.p === me){ mine++; lastMe = Math.max(lastMe, o.n); } else { theirs++; lastRv = Math.max(lastRv, o.n); } }
+  const fin = $("resFinal"); fin.textContent = "";
+  const btns = $("resBtns"); btns.textContent = "";
+  const mk = (t, cls, fn, dis) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = t; b.disabled = !!dis; b.addEventListener("click", fn); btns.append(b); return b; };
+  const num = (v, cls) => { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = v; return s; };
+  if (S.mode === "solo"){
+    $("resTitle").textContent = mine === S.P.words.length ? "¡Completo!" : "Se acabó";
+    fin.append(num(mine, "you"), num("de", "sep"), num(S.P.words.length));
+    $("resSub").textContent = "Palabras completadas en la práctica.";
+    mk("Jugar otra", "primary", startSolo);
+    mk("Volver al inicio", "ghost", () => { S.mode = null; showScreen("lobby"); });
+  } else {
+    let title, sub;
+    if (mine > theirs){ title = "¡Ganaste!"; sub = "Le sacaste " + (mine - theirs) + " de ventaja a " + S.rivalName + "."; }
+    else if (theirs > mine){ title = "Perdiste"; sub = S.rivalName + " completó más palabras."; }
+    else if (mine === 0){ title = "Empate"; sub = "Nadie completó palabras."; }
+    else if (lastMe < lastRv){ title = "¡Ganaste!"; sub = "Empate en palabras, pero llegaste primero a ese puntaje."; }
+    else { title = "Perdiste"; sub = "Empate en palabras; " + S.rivalName + " llegó primero a ese puntaje."; }
+    $("resTitle").textContent = title;
+    fin.append(num(mine, "you"), num("vs", "sep"), num(theirs, "rv"));
+    $("resSub").textContent = S.mode === "host" ? sub : sub + " Si " + S.rivalName + " pide revancha, arranca sola.";
+    if (S.mode === "host") mk(S.rivalHere ? "Revancha" : "Tu rival salió", "primary", hostStart, !S.rivalHere);
+    mk("Salir", "ghost", leaveRoom);
+  }
+  $("resOverlay").hidden = false;
+}
+
+/* ---------- Botones del lobby ---------- */
+$("btnCreate").addEventListener("click", createRoom);
+$("btnJoin").addEventListener("click", () => joinRoom($("joinCode").value));
+$("joinCode").addEventListener("keydown", e => { if (e.key === "Enter") joinRoom($("joinCode").value); });
+$("btnSolo").addEventListener("click", startSolo);
+$("btnLeaveGame").addEventListener("click", () => { if (S.mode === "solo"){ S.mode = null; S.game = null; showScreen("lobby"); } else leaveRoom(); });
+window.addEventListener("pagehide", () => { if (CONN && CONN.open) try { CONN.send({ t: "bye" }); } catch(e){} });
+
+})();
+</script>
+</body>
+</html>
