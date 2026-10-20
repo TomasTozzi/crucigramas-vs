@@ -104,8 +104,8 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .play{display:flex;flex-direction:column;gap:12px;min-width:0}
 .board-wrap{display:flex;justify-content:center}
 @media (max-width:540px){.board-wrap{margin-left:calc(4px - max(16px,env(safe-area-inset-left,0px)));margin-right:calc(4px - max(16px,env(safe-area-inset-right,0px)))}}
-.board{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:1px;padding:2px;background:var(--block);border-radius:4px;width:min(100%,calc(var(--cols) * 40px));aspect-ratio:var(--cols)/var(--rows);container-type:inline-size;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.cell{position:relative;border-radius:1px;background:var(--cell);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(100cqw / var(--cols) * .55);line-height:1;text-transform:uppercase;cursor:pointer;transition:background-color .12s;min-width:0}
+.board{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:1px;padding:2px;background:var(--block);border-radius:4px;width:min(100%,calc(var(--cols) * 40px));aspect-ratio:var(--cols)/var(--rows);container-type:inline-size;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cell{position:relative;border-radius:1px;background:var(--cell);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(100cqw / var(--cols) * .55);line-height:1;text-transform:uppercase;cursor:pointer;transition:background-color .12s;min-width:0;min-height:0;overflow:hidden}
 .cell.void{background:transparent;cursor:default}
 .cell .n{position:absolute;top:0;left:1px;font-size:max(7px,calc(100cqw / var(--cols) * .27));font-weight:700;color:var(--muted);line-height:1.1}
 .cell.inword{background:var(--word)}
@@ -1623,7 +1623,706 @@ VEINTE|Dos decenas
 DOCENA|Doce unidades
 MITAD|Una de dos partes iguales
 DOBLE|Dos veces
-TRIPLE|Tres veces`.split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
+TRIPLE|Tres veces
+GIN|Bebida alcohólica con enebro
+HIT|Gran éxito musical
+ION|Átomo con carga eléctrica
+KIT|Conjunto de herramientas o piezas
+MUS|Juego de naipes español
+OLE|Grito de aliento en la plaza de toros
+ONU|Organización de las Naciones Unidas, en siglas
+PUB|Bar al estilo inglés
+RAP|Música de rimas habladas
+TIC|Movimiento involuntario repetido
+VOS|Pronombre de segunda persona en el Río de la Plata
+YAK|Bóvido peludo del Tíbet
+AHI|En ese lugar
+ALLI|En aquel lugar
+PRO|A favor de
+TEZ|Piel de la cara
+USO|Empleo, utilización
+SON|Ritmo cubano; también ruido agradable
+UNA|Artículo indefinido femenino
+NOS|Pronombre de primera persona plural
+CON|Preposición de compañía
+SIN|Preposición de carencia
+POR|Signo de la multiplicación, leído
+PARA|Preposición de finalidad
+AUN|Todavía
+MUY|Bastante, mucho
+PAR|Número divisible por dos
+ADN|Molécula de la herencia, en siglas
+IVA|Impuesto al valor agregado, en siglas
+DNI|Documento argentino, en siglas
+AFA|Asociación del Fútbol Argentino, en siglas
+UBA|Universidad porteña, en siglas
+PBI|Producto bruto interno, en siglas
+OVNI|Objeto volador no identificado
+NASA|Agencia espacial estadounidense
+FIFA|Organiza el Mundial de fútbol
+USB|Conector de la compu, en siglas
+PDF|Formato de documento, en siglas
+GPS|Sistema de ubicación satelital, en siglas
+LED|Luz de bajo consumo, en siglas
+DVD|Disco de películas, en siglas
+SMS|Mensaje de texto, en siglas
+VIP|Persona muy importante, en siglas
+ARCA|Barco de Noé
+ASTA|Palo de la bandera
+ATUN|Pescado que viene en lata
+BABA|Saliva espesa
+BAÑO|Lugar de la ducha
+BATA|Prenda que se usa al salir de la ducha
+BECA|Ayuda económica para estudiar
+BODA|Casamiento
+BOYA|Flota en el mar como señal
+BUDA|Fundador del budismo
+CALA|Bahía pequeña
+CAÑA|Tallo del bambú; también de pescar
+CAVA|Vino espumoso español
+CLIP|Sujeta papeles
+COMA|Signo de puntuación
+CUNA|Cama del bebé
+CURA|Sacerdote; también remedio
+DAGA|Puñal
+FAJA|Banda que ciñe la cintura
+FETA|Rebanada de fiambre
+FICHA|Pieza de un juego de mesa
+FIEL|Leal
+FOSA|Hoyo para enterrar
+GIRO|Vuelta
+GRUA|Máquina para levantar peso
+GUIA|Persona que muestra el camino
+HALO|Aureola
+HOYO|Agujero en la tierra
+HUSO|El horario divide el planeta en franjas
+JOTA|Letra J; también baile aragonés
+KILO|Mil gramos
+LAMA|Monje budista del Tíbet
+LAZO|Moño de cinta
+LEÑA|Madera para el fuego
+LIRA|Instrumento de cuerdas antiguo
+LONA|Tela fuerte de las carpas
+LOTE|Terreno
+LUCA|Mil pesos, en lunfardo
+LUTO|Duelo por una muerte
+MAZO|Conjunto de cartas; también martillo de madera
+MECHA|Hilo de la vela
+MENU|Lista de platos
+MORA|Fruto negro del bosque
+MOÑO|Lazo en el pelo
+MUSA|Inspira al artista
+NENA|Chica pequeña
+OLMO|Árbol de hojas aserradas
+OTRO|Distinto, diferente
+PAJA|Tallo seco del trigo
+PALO|Trozo de madera largo
+PANA|Tela aterciopelada
+PECA|Manchita en la piel
+PICO|Boca de un ave; también cumbre
+POCO|Escaso
+PUÑO|Mano cerrada
+PURO|Cigarro grande; también sin mezcla
+REMO|Sirve para mover un bote
+RIZO|Rulo
+ROBO|Hurto
+RODEO|Fiesta de jinetes y ganado
+ROPA|Prendas de vestir
+RUDA|Planta que se toma en agosto con caña
+SALA|Habitación de la casa para recibir
+SEDE|Lugar central de una organización
+SETA|Hongo comestible
+SODA|Agua con gas
+SOLO|Sin compañía
+SUMO|Lucha japonesa de gigantes
+TIRO|Disparo
+TONO|Altura de un sonido
+TOPO|Mamífero que cava túneles
+TRAMO|Parte de un camino
+TRIO|Grupo de tres
+VAGO|Perezoso
+VALE|Bono, cupón
+VELO|Tela que cubre el rostro de la novia
+YOYO|Juguete que sube y baja por un hilo
+ZETA|Última letra del abecedario
+ALBA|Primera luz del día
+ALDEA|Pueblo pequeño
+ALGO|Una cosa indeterminada
+ANCLA|Fija el barco al fondo
+ANTE|Frente a
+ARIA|Pieza para una voz en la ópera
+AROMA|Olor agradable
+ASCO|Repugnancia
+ASNO|Burro
+ATRAS|Detrás
+AYER|El día anterior a hoy
+BALA|Proyectil
+BAUL|Arcón para guardar cosas
+BOINA|Gorra del gaucho
+BOMBA|Explosivo
+BRASA|Carbón encendido
+CAOS|Desorden total
+CAPA|Abrigo sin mangas; también estrato
+CASCO|Protege la cabeza
+CEBO|Carnada
+CERCO|Valla
+CHAL|Prenda para los hombros
+CHIP|Pieza electrónica diminuta
+CLAN|Grupo familiar
+COFRE|Caja de tesoros
+COLMO|El límite de lo tolerable
+CORAL|Esqueleto marino de colores
+CORTE|Herida hecha con filo; también tribunal
+COTO|Terreno de caza
+CUERO|Piel curtida
+CUPO|Lugar disponible
+DARDO|Flecha pequeña que se lanza a mano
+DIETA|Régimen de comidas
+DIQUE|Muro que contiene el agua
+DOGO|Raza de perro argentina
+DRAMA|Obra trágica
+DUELO|Combate entre dos; también tristeza por una muerte
+DUQUE|Título noble
+ENOJO|Bronca
+FALTA|Infracción en un partido
+FIBRA|Hilo de un tejido
+FILO|Borde cortante
+FLECHA|Se dispara con arco
+FLOTA|Conjunto de barcos
+FUGA|Escape
+FUNDA|Cubre la almohada
+GAITA|Instrumento escocés de viento
+GASA|Tela para vendar
+GENIO|Persona muy inteligente; también sale de la lámpara
+GESTO|Movimiento de la cara o las manos
+GOLPE|Choque fuerte
+GRAMO|Milésima de kilo
+GRASA|Sebo
+GRIETA|Abertura; también división política
+GUIÑO|Cerrar un ojo con complicidad
+HAMACA|Red para descansar colgada
+HEBRA|Hilo
+HUELLA|Marca que deja el pie
+HUMANO|Persona
+IGLU|Casa de hielo
+JARABE|Remedio dulce para la tos
+JINETE|Monta a caballo
+JUNCO|Planta de las orillas
+LANZA|Arma de asta larga
+LATIDO|Golpe del corazón
+LIMBO|Lugar indefinido
+LINCE|Felino de vista aguda
+LLANO|Plano
+LOMA|Colina pequeña
+LUNAR|Mancha en la piel
+MACETA|Recipiente para plantas
+MARCA|Nombre de un producto
+MAREA|Sube y baja con la luna
+MENTA|Hierba refrescante
+MIRA|Parte del arma para apuntar
+MONJA|Religiosa
+MORSA|Mamífero marino con colmillos
+MOTIVO|Razón
+NAIPE|Carta de la baraja
+NOBLE|De la aristocracia
+NOVIO|Pareja de una muchacha
+OLIVA|Aceituna
+OPACO|Que no deja pasar la luz
+OSTRA|Molusco que puede tener una perla
+PADRINO|Testigo del bautismo
+PALCO|Lugar en el teatro
+PANAL|Casa de las abejas
+PANTANO|Terreno barroso con agua
+PAÑUELO|Tela para sonarse la nariz
+PARCHE|Remiendo
+PARRILLA|Se usa para el asado
+PASO|Movimiento al caminar
+PAUSA|Interrupción breve
+PEDAL|Se pisa en la bicicleta
+PIEZA|Parte de un todo
+PINZA|Herramienta para sujetar
+PIOJO|Insecto de la cabeza
+PLAGA|Invasión de insectos
+PLAZO|Tiempo para cumplir algo
+PLOMO|Metal pesado
+POETA|Escribe versos
+POLVO|Tierra muy fina
+PRESA|Dique; también animal cazado
+PRISA|Apuro
+PRUEBA|Examen
+RAMBLA|Paseo costero
+RANGO|Jerarquía
+RASGO|Característica
+RECREO|Pausa en la escuela
+REJA|Barrotes de la ventana
+RELLENO|Lo que va adentro de la empanada
+RENTA|Ganancia
+REPISA|Estante
+RIEGO|Acción de echar agua a las plantas
+RITO|Ceremonia
+ROSCA|Vuelta de un tornillo; también pan dulce
+RUBIO|De pelo claro
+RUMBO|Dirección
+SABLE|Espada curva
+SALTO|Movimiento de elevarse del suelo
+SAUNA|Baño de vapor
+SILBATO|Lo usa el árbitro
+SOBRINO|Hijo del hermano
+SOPLO|Aire que sale de la boca
+SUEGRA|Madre del cónyuge
+SURCO|Línea que abre el arado
+TALLO|Sostiene la flor
+TAPIZ|Tela decorativa colgada
+TECLA|Se aprieta para escribir
+TELON|Cortina del escenario
+TEMPLO|Edificio religioso
+TIMON|Dirige el barco
+TINTE|Colorante
+TOBOGAN|Juego de plaza para deslizarse
+TRAGO|Bebida, sorbo
+TRAPO|Paño para limpiar
+TRIBU|Grupo de familias
+TROFEO|Premio del campeón
+TURNO|Orden para atender
+VAGON|Coche de tren
+VAINA|Funda de la espada
+VALIJA|Maleta
+VASIJA|Recipiente de barro
+VELOZ|Rápido
+VERJA|Reja
+VISTA|Sentido de los ojos
+VIUDA|Mujer que perdió al esposo
+YUNQUE|Bloque donde golpea el herrero
+ZARPA|Pata con uñas
+ZORZAL|Pájaro cantor del Río de la Plata
+ARVEJA|Legumbre verde redonda
+BATATA|Tubérculo dulce
+CALDO|Sopa clara
+CANELA|Especia de la torta
+CHURRO|Masa frita con azúcar
+CHORIZO|Embutido del asado
+COMINO|Especia de las empanadas
+LIMONADA|Bebida de limón
+MATAMBRE|Corte de carne que se arrolla
+MOLLEJA|Achura del asado
+MORCILLA|Embutido de sangre
+ÑOQUI|Pasta de papa del 29
+PANQUEQUE|Masa fina de sartén
+POCHOCLO|Maíz inflado del cine
+POLENTA|Harina de maíz cocida
+RAVIOL|Pasta rellena cuadrada
+TALLARIN|Fideo largo y plano
+TARTA|Masa con relleno al horno
+REMOLACHA|Hortaliza roja
+RUCULA|Hoja verde picante
+ALBAHACA|Hierba del pesto
+CHAMPIÑON|Hongo de ensalada
+MANDARINA|Cítrico fácil de pelar
+MEMBRILLO|Dulce del vigilante con queso
+QUINOTO|Cítrico chiquito
+FRAMBUESA|Fruto rojo del bosque
+ARANDANO|Fruto azul del bosque
+GRANADA|Fruta de granos rojos
+BUITRE|Ave carroñera
+CAIMAN|Reptil parecido al cocodrilo
+CHANCHO|Cerdo
+CHIVO|Cría de la cabra
+COBRA|Serpiente de capucha
+COLIBRI|Pájaro diminuto que aletea rapidísimo
+CUERVO|Pájaro negro
+GACELA|Antílope veloz
+GAVIOTA|Ave de la playa
+GORRION|Pajarito de ciudad
+HALCON|Ave rapaz veloz
+HAMSTER|Roedor de mascota
+HIENA|Animal que parece reírse
+LANGOSTA|Crustáceo; también plaga
+LECHUZA|Ave nocturna
+LOMBRIZ|Gusano de la tierra
+MAPACHE|Animal con antifaz
+MARMOTA|Roedor que duerme mucho
+PANDA|Oso blanco y negro
+PELICANO|Ave con bolsa en el pico
+PUERCOESPIN|Roedor con púas
+RENO|Tira el trineo de Papá Noel
+RINOCERONTE|Animal con cuerno en la nariz
+TEJON|Mamífero que cava madrigueras
+VIZCACHA|Roedor de la pampa
+ZORRINO|Animal que larga mal olor
+ALPACA|Camélido andino lanudo
+LANGOSTINO|Crustáceo rosado
+CAMARON|Crustáceo chico
+CALAMAR|Molusco de las rabas
+ALMEJA|Molusco de dos valvas
+MEJILLON|Molusco negro de la paella
+CUCARACHA|Insecto que todos odian
+LIBELULA|Insecto de alas transparentes
+LUCIERNAGA|Insecto que brilla de noche
+ESCARABAJO|Insecto de caparazón duro
+AVISPA|Insecto que pica
+POLILLA|Mariposa nocturna
+AEROPUERTO|Donde aterrizan los aviones
+AVENIDA|Calle ancha
+BIBLIOTECA|Lugar lleno de libros
+CAPILLA|Iglesia pequeña
+CARCEL|Prisión
+CATEDRAL|Iglesia principal
+CEMENTERIO|Lugar de tumbas
+CLINICA|Hospital privado
+ESQUINA|Donde se cruzan dos calles
+ESTACION|Parada del tren
+FABRICA|Lugar de producción
+FARMACIA|Venden remedios
+GRANJA|Campo con animales
+HOTEL|Alojamiento para viajeros
+KIOSCO|Venden golosinas
+MURALLA|Muro que rodea una ciudad
+PANADERIA|Venden pan y facturas
+PASILLO|Corredor
+PELUQUERIA|Cortan el pelo
+QUINTA|Casa de campo con huerta
+SOTANO|Piso bajo tierra
+TERRAZA|Azotea
+UNIVERSIDAD|Casa de altos estudios
+VEREDA|Donde caminan los peatones
+ZOOLOGICO|Lugar con animales en exhibición
+ABRAZO|Saludo con los brazos
+ACCION|Hecho
+ACENTO|Tilde; también tonada
+AGENDA|Libreta de citas
+AGUJA|Sirve para coser
+ALARMA|Aviso sonoro
+ALBUM|Libro de fotos o figuritas
+ALIENTO|Aire que se exhala
+ALTURA|Elevación
+ANTENA|Recibe señales
+ANZUELO|Gancho para pescar
+APUESTA|Lo que se juega por dinero
+ARMA|Instrumento para atacar
+ARRUGA|Pliegue de la piel
+AZOTEA|Techo plano
+BALANZA|Sirve para pesar
+BARRIL|Tonel
+BASTON|Ayuda para caminar
+BOLETO|Pasaje
+BOTIN|Calzado de fútbol
+BURBUJA|Esfera de jabón
+CABLE|Hilo conductor
+CADENA|Eslabones unidos
+CALCULO|Cuenta matemática
+CANASTA|Cesto
+CANDADO|Cierra con llave
+CARPA|Tienda de campaña
+CARTEL|Letrero
+CASCABEL|Campanita
+CENIZA|Resto del fuego
+CHISTE|Broma
+COPIA|Duplicado
+CUOTA|Pago parcial
+DESFILE|Marcha
+DIARIO|Periódico
+DISFRAZ|Para el carnaval
+EDIFICIO|Construcción grande
+EJEMPLO|Muestra
+EMPATE|Igualdad en el resultado
+ENCHUFE|Conecta a la corriente
+ESCENA|Parte de una obra
+ESFERA|Bola
+ESPUMA|Burbujas juntas
+ESTRENO|Primera función
+ETIQUETA|Rótulo
+FIGURITA|Se pega en el álbum del Mundial
+FLECO|Borde de hilos
+FOGATA|Fuego al aire libre
+FRASCO|Envase de vidrio
+GALERA|Sombrero del mago
+GANCHO|Sirve para colgar
+GARAJE|Lugar para el auto
+GOTERA|Agua que cae del techo
+HAZAÑA|Proeza
+HERIDA|Lesión
+HERENCIA|Lo que se recibe al fallecer alguien
+HUERTA|Terreno de verduras
+INCENDIO|Fuego grande
+INSECTO|Tiene seis patas
+LADRON|Roba
+LEYENDA|Relato tradicional
+LIMOSNA|Dinero dado a un pobre
+LLANTO|Lágrimas
+MANCHA|Suciedad
+MAQUETA|Modelo a escala
+MASCARA|Tapa la cara
+MOLINO|Muele con el viento
+MUÑECO|Juguete con forma humana
+NAUFRAGIO|Hundimiento de un barco
+NEUMATICO|Rueda de goma
+OBSEQUIO|Regalo
+OFERTA|Rebaja
+OLEAJE|Movimiento de las olas
+ORGULLO|Satisfacción propia
+PALANCA|Barra para mover peso
+PANTUFLA|Calzado de entrecasa
+PAQUETE|Envoltorio
+PARADA|Lugar donde para el colectivo
+PASAPORTE|Documento para viajar
+PEDAZO|Trozo
+PENSAMIENTO|Idea
+PISADA|Huella
+PLUMERO|Sirve para sacar el polvo
+POLEA|Rueda con soga
+PORTON|Puerta grande
+POSTE|Palo vertical
+PROMESA|Compromiso
+PUBLICO|Espectadores
+PULSO|Latido en la muñeca
+RASCACIELOS|Edificio altísimo
+RECIBO|Comprobante
+REFUGIO|Lugar seguro
+RELAMPAGO|Luz del rayo
+REMEDIO|Medicamento
+RETRATO|Foto o pintura de una persona
+RINCON|Esquina interior
+SEMAFORO|Luz de tránsito
+SERENATA|Música bajo la ventana
+SILUETA|Contorno
+SORBETE|Pajita para tomar
+TARIMA|Plataforma
+TATUAJE|Dibujo en la piel
+TRAMPOLIN|Para saltar a la pileta
+TRINEO|Vehículo sobre nieve
+TROMPO|Juguete que gira
+VAINILLA|Saborizante de postres
+VENDA|Tela para heridas
+VITRINA|Mueble de vidrio
+VOLANTE|Dirige el auto
+ZOCALO|Borde inferior de la pared
+ABRAZAR|Rodear con los brazos
+ACABAR|Terminar
+ACEPTAR|Decir que sí
+ACOSTAR|Llevar a la cama
+ADIVINAR|Acertar sin saber
+AGARRAR|Tomar con la mano
+APAGAR|Lo contrario de encender
+ENCENDER|Prender
+APRENDER|Adquirir conocimiento
+ARMAR|Montar las piezas
+ATRAPAR|Agarrar algo que se escapa
+AVISAR|Advertir
+BARRER|Limpiar con escoba
+BORRAR|Quitar lo escrito
+BRILLAR|Dar luz
+CAER|Ir al suelo
+CALLAR|Hacer silencio
+CAMBIAR|Transformar
+CAMINAR|Andar
+CANSAR|Agotar
+CARGAR|Llevar peso
+CAZAR|Atrapar animales
+CENAR|Comer de noche
+COBRAR|Recibir un pago
+COLGAR|Suspender
+CONTAR|Enumerar; también narrar
+CORTAR|Dividir con tijera
+CRECER|Aumentar de tamaño
+CUIDAR|Proteger
+CURAR|Sanar
+DEJAR|Soltar
+DIBUJAR|Hacer trazos con lápiz
+DUDAR|No estar seguro
+ELEGIR|Optar
+EMPEZAR|Comenzar
+ENSEÑAR|Transmitir conocimientos
+ENVIAR|Mandar
+ESCONDER|Ocultar
+ESPERAR|Aguardar
+ESTIRAR|Alargar
+EVITAR|Esquivar
+EXPLICAR|Aclarar
+FALTAR|No estar
+FESTEJAR|Celebrar
+FLOTAR|Mantenerse sobre el agua
+FREIR|Cocinar en aceite
+GASTAR|Usar dinero
+GIRAR|Dar vueltas
+GOLPEAR|Pegar
+GRITAR|Hablar muy fuerte
+GUARDAR|Poner a resguardo
+HERVIR|Calentar el agua hasta las burbujas
+HUIR|Escapar
+LLAMAR|Telefonear
+LLEGAR|Arribar
+LLEVAR|Transportar
+LIMPIAR|Sacar la suciedad
+MANDAR|Ordenar; también enviar
+MANEJAR|Conducir
+MEZCLAR|Juntar ingredientes
+MOJAR|Humedecer
+MORDER|Clavar los dientes
+MOVER|Cambiar de lugar
+NEGAR|Decir que no
+NEVAR|Caer copos del cielo
+OCULTAR|Esconder
+OLVIDAR|Perder un recuerdo
+ORDENAR|Poner en su lugar
+PASEAR|Dar una vuelta
+PEDIR|Solicitar
+PEGAR|Unir con adhesivo
+PELEAR|Discutir, luchar
+PERMITIR|Dejar hacer
+PESCAR|Sacar peces
+PISAR|Poner el pie encima
+PLANTAR|Poner en la tierra
+PREGUNTAR|Hacer una consulta
+PRESTAR|Dar por un tiempo
+PROBAR|Ensayar; también degustar
+QUEMAR|Arder
+RECORDAR|Traer a la memoria
+REGAR|Echar agua a las plantas
+RESPIRAR|Inhalar y exhalar
+ROBAR|Hurtar
+ROMPER|Quebrar
+SACAR|Extraer
+SALUDAR|Decir hola
+SECAR|Quitar la humedad
+SEGUIR|Ir detrás
+SENTAR|Apoyar en una silla
+SERVIR|Ser útil; también poner en el plato
+SILBAR|Hacer sonar los labios
+SONAR|Hacer ruido
+SOPLAR|Echar aire
+SUFRIR|Padecer
+TEJER|Hacer con agujas e hilo
+TEMBLAR|Sacudirse de frío o miedo
+TIRAR|Lanzar
+TOSER|Carraspear fuerte
+TRABAJAR|Laburar
+TRAER|Llevar hacia acá
+VESTIR|Poner ropa
+VOTAR|Elegir en la urna
+ARREGLAR|Reparar
+AMABLE|Cortés
+ANTIGUO|Muy viejo
+ATENTO|Que presta atención
+BRAVO|Valiente; también enojado
+BREVE|Corto
+CALLADO|Silencioso
+CANSADO|Agotado
+CERCANO|Próximo
+COMICO|Gracioso
+CRUDO|Sin cocinar
+CURIOSO|Que quiere saber
+DEBIL|Sin fuerza
+DESNUDO|Sin ropa
+DIFICIL|Complicado
+DORMIDO|Que está en la cama con los ojos cerrados
+EXTRAÑO|Raro
+FALSO|No verdadero
+FAMOSO|Conocido
+FRESCO|Un poco frío; también recién hecho
+GENIAL|Excelente
+HONDO|Profundo
+HUMEDO|Algo mojado
+IGUAL|Idéntico
+INMENSO|Enorme
+LEJANO|Distante
+LIGERO|Liviano
+MADURO|Listo para comer, dicho de una fruta
+MAGICO|Encantado
+MEJOR|Superior
+NERVIOSO|Intranquilo
+NORMAL|Común
+PEOR|Inferior
+PEQUEÑO|Chico
+PERFECTO|Sin errores
+POSIBLE|Que puede pasar
+PRONTO|Enseguida
+PROFUNDO|Hondo
+PUNTUAL|Que llega a horario
+QUIETO|Sin moverse
+RARO|Extraño
+SABIO|Que sabe mucho
+SALVAJE|No domesticado
+SEGURO|Sin riesgo
+SENCILLO|Simple
+SERIO|Que no se ríe
+SIMPLE|Fácil
+SUAVE|Liso al tacto
+TONTO|Poco inteligente
+TOTAL|Completo
+TRANQUILO|Calmo
+ULTIMO|El que va al final
+UNICO|Solo uno
+VALIENTE|Con coraje
+VERDADERO|Real
+BELGRANO|Creador de la bandera
+SARMIENTO|Padre del aula
+BORGES|Autor de El Aleph
+CORTAZAR|Autor de Rayuela
+QUINO|Creador de Mafalda
+MAFALDA|Nena de la historieta que odia la sopa
+GARDEL|El Zorzal Criollo
+PIAZZOLLA|Revolucionó el tango con su bandoneón
+FANGIO|Quíntuple campeón de Fórmula 1
+CHAMAME|Música del Litoral con acordeón
+MALAMBO|Zapateo del gaucho
+PONCHO|Abrigo del gaucho
+FACON|Cuchillo del gaucho
+BOLEADORAS|Arma gaucha de piedras y tientos
+ESTANCIA|Gran establecimiento de campo
+PULPERIA|Almacén y bar del campo antiguo
+FILETE|Arte decorativo porteño; también corte de carne
+CONVENTILLO|Casa de inquilinato porteña
+PORTEÑO|Nacido en Buenos Aires
+CUYO|Región de Mendoza, San Juan y San Luis
+LITORAL|Región de los grandes ríos
+PUNA|Altiplano del noroeste
+QUEBRADA|Paso estrecho entre montañas
+CALAFATE|Ciudad del glaciar Perito Moreno; también un fruto
+TANDIL|Ciudad de la Piedra Movediza
+LUJAN|Ciudad de la basílica
+NEUQUEN|Provincia de Vaca Muerta
+CHUBUT|Provincia de Puerto Madryn
+FORMOSA|Provincia del norte limítrofe con Paraguay
+CATAMARCA|Provincia del noroeste
+CORRIENTES|Provincia de los esteros del Iberá
+ALGEBRA|Rama de la matemática con letras
+ANGULO|Abertura entre dos líneas
+CELULA|Unidad de la vida
+CIRCULO|Figura redonda
+CUADRADO|Figura de cuatro lados iguales
+DIAMETRO|Atraviesa el círculo por el centro
+FRACCION|Parte de un entero
+GEOMETRIA|Estudio de las figuras
+GRAFICO|Representación con barras o líneas
+IMPAR|Que no se divide por dos
+MOLECULA|Unión de átomos
+PRISMA|Cuerpo que descompone la luz
+RECTA|Línea sin curvas
+RESTA|Operación con el signo menos
+TRIANGULO|Figura de tres lados
+VOLUMEN|Espacio que ocupa algo; también intensidad del sonido
+METODO|Procedimiento
+TEORIA|Explicación científica
+SATELITE|Gira alrededor de un planeta
+TELESCOPIO|Sirve para mirar las estrellas
+MICROSCOPIO|Sirve para ver lo diminuto
+ANTIVIRUS|Protege la computadora
+CARGADOR|Recarga el celular
+CURSOR|Flecha que se mueve en la pantalla
+DESCARGA|Bajar un archivo
+IMPRESORA|Saca copias en papel
+MONITOR|Pantalla de la compu
+NAVEGADOR|Programa para ver páginas web
+SERVIDOR|Computadora que atiende pedidos
+ALGORITMO|Serie de pasos para resolver un problema
+VARIABLE|Guarda un valor en un programa
+FUNCION|Bloque de código reutilizable
+BUCLE|Repetición en un programa
+CONTRASEÑA|Clave secreta
+PERFIL|Página de un usuario
+SEGUIDOR|Sigue a alguien en redes
+MEME|Imagen graciosa que circula
+PODCAST|Programa de audio por internet`.split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
 
 /* ---------- Generador de tablero cuadrado ---------- */
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
