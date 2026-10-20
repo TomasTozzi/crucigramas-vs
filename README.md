@@ -25,4 +25,4 @@ Importá el repo de GitHub, o en la compu arrastrá la carpeta a https://app.net
 - Si el invitado se desconecta, puede volver con el mismo link y conserva sus palabras.
 - En algunas redes muy cerradas (wifi corporativo, algunos datos móviles) la conexión directa puede fallar. Para producción conviene pasar a un servidor propio (Supabase Realtime o un servidor PeerJS propio).
 - Cada partida arma un crucigrama cuadrado de 15×15 con casillas negras y unas 35 a 40 palabras. El tamaño está en `GRID`.
-- El banco tiene unas 1.300 palabras con pistas en `BANK`, al principio del script. Para sumar más, agregá líneas `PALABRA|Pista` (solo mayúsculas, sin tildes, Ñ permitida, 3 a 11 letras). Cuantas más palabras cortas haya, más denso sale el tablero.
+- El banco tiene unas 2.000 palabras con pistas en `BANK`, al principio del script. Para sumar más, agregá líneas `PALABRA|Pista` (solo mayúsculas, sin tildes, Ñ permitida, 3 a 11 letras). Cuantas más palabras cortas haya, más denso sale el tablero.
