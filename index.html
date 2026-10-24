@@ -79,7 +79,7 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .rules{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 
 /* wait */
-.code-big{font-family:var(--f-display);font-weight:800;font-size:clamp(56px,16vw,96px);letter-spacing:.12em;line-height:1}
+.code-big{font-family:var(--f-body);font-weight:700;font-size:clamp(56px,16vw,96px);letter-spacing:.12em;line-height:1}
 .players{display:flex;flex-direction:column;gap:8px}
 .player{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);background:var(--bg)}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
@@ -254,7 +254,7 @@ body.touch .hint{display:none}
           <div class="field">
             <label class="label" for="joinCode">Unirte con código</label>
             <div class="row">
-              <input type="text" id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Ej: K7QM" style="text-transform:uppercase;letter-spacing:.12em">
+              <input type="text" id="joinCode" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Ej: K7QM" style="text-transform:uppercase;letter-spacing:.12em">
               <button class="btn" id="btnJoin">Unirme</button>
             </div>
           </div>
@@ -2532,7 +2532,7 @@ function rid(){ return Math.random().toString(36).slice(2, 10); }
 /* Identidad de esta pestaña: sobrevive a una recarga, así se puede volver a la misma partida */
 /* Versión del protocolo entre dispositivos: si no coincide, se avisa en vez de quedar trabado */
 const VERSION = 4;          /* protocolo: cambia solo si cambian los mensajes */
-const APP_VERSION = "4.3";  /* lo que ve la gente */
+const APP_VERSION = "4.4";  /* lo que ve la gente */
 /* Se reutiliza solo al recargar; una pestaña duplicada o abierta desde otra arranca con identidad nueva */
 const NAV_TYPE = ((performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {}).type;
 const UID = (NAV_TYPE === "reload" && tabStore.get("cvs-uid")) || (rid() + rid());
@@ -2556,7 +2556,7 @@ if (isTouch) document.body.classList.add("touch");
 
 function cleanName(x){ return String(x == null ? "" : x).replace(/[\u0000-\u001f\u007f-\u009f­​-‏‪-‮⁠-⁯﻿]/g, "").trim().slice(0, 20); }
 function randSeed(){ return Math.floor(Math.random() * 2147483647); }
-function genCode(){ const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random()*A.length)]; return s; }
+function genCode(){ const A = "ACDEFHJKMNPQRTUVWXY3479";   /* sin pares que se confunden: S/5, Z/2, B/8, G/6, O/0, I/1/L */ let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random()*A.length)]; return s; }
 function cleanCode(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4); }
 function fmt(t){ t = Math.max(0, t|0); return Math.floor(t/60) + ":" + String(t%60).padStart(2, "0"); }
 function inviteUrl(){ const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("sala", S.code); return u.toString(); }
@@ -2715,6 +2715,7 @@ async function createRoom(){
   setBusy(false);
   if (!p){ toast("No se pudo crear la sala. Revisá tu conexión y probá de nuevo."); return; }
   PEER = p; S.code = code; S.role = "host";
+  forgetInvite(); $("joinCode").value = "";
   resetRoomState();
   S.players = [{ uid: UID, name: S.name, col: S.color, here: true }];
   S.rm = [null];
@@ -2919,7 +2920,7 @@ function guestOnData(d){
   if (d.t === "ver"){ leaveRoom(); toast("Tenés otra versión del juego que el anfitrión. Recargá la página y volvé a entrar.", 8000); return; }
   if (d.t !== "s") return;
   if (d.v !== VERSION){ leaveRoom(); toast("El anfitrión tiene otra versión del juego. Pedile que recargue la página y vuelvan a intentar.", 8000); return; }
-  if (!S.hostSeen){ S.hostSeen = true; clearTimeout(S.joinTimer); }
+  if (!S.hostSeen){ S.hostSeen = true; clearTimeout(S.joinTimer); forgetInvite(); }
   const players = Array.isArray(d.players) ? d.players.slice(0, MAX_PLAYERS) : [];
   S.players = players.map(p => ({ name: cleanName(p && p.n) || "Jugador", col: validColor(p && p.c) ? p.c : "naranja", here: !!(p && p.h), late: !!(p && p.l) }));
   S.me = Number.isInteger(d.you) && d.you >= 0 && d.you < S.players.length ? d.you : 0;
@@ -3448,6 +3449,20 @@ function setMissing(){
 $("btnCreate").addEventListener("click", createRoom);
 $("btnJoin").addEventListener("click", () => joinRoom($("joinCode").value));
 $("joinCode").addEventListener("keydown", e => { if (e.key === "Enter") joinRoom($("joinCode").value); });
+/* Pegar un código reemplaza lo que había (antes quedaba el código viejo de un link anterior) */
+$("joinCode").addEventListener("paste", e => {
+  const t = (e.clipboardData || window.clipboardData) ? (e.clipboardData || window.clipboardData).getData("text") : "";
+  const m = String(t).toUpperCase().match(/SALA=([A-Z0-9]{4})/) || null;   // también sirve pegar el link entero
+  const c = cleanCode(m ? m[1] : t);
+  if (c){ e.preventDefault(); $("joinCode").value = c; }
+});
+$("joinCode").addEventListener("input", () => { const el = $("joinCode"), c = cleanCode(el.value); if (el.value !== c) el.value = c; });
+$("joinCode").addEventListener("focus", () => { try { $("joinCode").select(); } catch(e){} });
+/* El ?sala= del link se usa una sola vez: después se borra de la dirección */
+function forgetInvite(){
+  if (location.search) try { history.replaceState(null, "", location.pathname + location.hash); } catch(e){}
+  $("inviteNote").hidden = true;
+}
 $("btnSolo").addEventListener("click", startSolo);
 $("btnBackRes").addEventListener("click", () => { S.viewBoard = false; S.viewIdx = null; renderAll(); });
 $("btnLeaveGame").addEventListener("click", () => { if (S.role === "solo"){ S.role = null; S.game = null; showScreen("lobby"); } else leaveRoom(); });
