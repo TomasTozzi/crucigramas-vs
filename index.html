@@ -2532,7 +2532,7 @@ function rid(){ return Math.random().toString(36).slice(2, 10); }
 /* Identidad de esta pestaña: sobrevive a una recarga, así se puede volver a la misma partida */
 /* Versión del protocolo entre dispositivos: si no coincide, se avisa en vez de quedar trabado */
 const VERSION = 4;          /* protocolo: cambia solo si cambian los mensajes */
-const APP_VERSION = "4.2";  /* lo que ve la gente */
+const APP_VERSION = "4.3";  /* lo que ve la gente */
 /* Se reutiliza solo al recargar; una pestaña duplicada o abierta desde otra arranca con identidad nueva */
 const NAV_TYPE = ((performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {}).type;
 const UID = (NAV_TYPE === "reload" && tabStore.get("cvs-uid")) || (rid() + rid());
@@ -2650,10 +2650,7 @@ $("noNet").hidden = HAS_PEER;
 $("verLobby").textContent = $("verWait").textContent = "Versión " + APP_VERSION;
 /* Una pestaña que quedó abierta mucho tiempo se recarga sola al volver, para no jugar con una versión vieja */
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible") return;
-  if (!S.role && Date.now() - LOADED_AT > 30 * 60 * 1000){ location.reload(); return; }
-  // al volver a la app, la sala se reactiva enseguida para que los demás puedan entrar
-  if (PEER && !PEER.destroyed && PEER.disconnected) try { PEER.reconnect(); } catch(e){}
+  if (document.visibilityState === "visible" && !S.role && Date.now() - LOADED_AT > 30 * 60 * 1000) location.reload();
 });
 $("duelControls").hidden = !HAS_PEER;
 const invited = cleanCode(new URLSearchParams(location.search).get("sala"));
@@ -2691,16 +2688,10 @@ function openPeer(id){
     p.on("disconnected", () => { if (opened && PEER === p && !p.destroyed) setTimeout(() => { if (PEER === p && !p.destroyed) try { p.reconnect(); } catch(e){} }, 1500); });
   });
 }
-const JOIN_PATIENCE = 30000;
-const notFoundMsg = code => "No encontramos la sala " + code + ". Revisá el código y que quien la creó tenga el juego abierto en pantalla: si cambia de app, la sala se pausa.";
 function onPeerError(p, err){
   if (PEER !== p) return;
   if (err && err.type === "peer-unavailable" && S.role === "guest" && !S.hostSeen){
-    // la sala puede estar pausada (el anfitrión cambió de app): se reintenta un rato antes de rendirse
-    if (Date.now() < S.joinUntil){
-      $("waitHelp").textContent = "Buscando la sala " + S.code + "… Si la creó otra persona, pedile que tenga el juego abierto en pantalla.";
-      clearTimeout(S.retryT); S.retryT = setTimeout(() => { if (S.role === "guest" && !S.hostSeen && PEER === p) connectHost(); }, 2500);
-    } else { leaveRoom(); toast(notFoundMsg(S.code), 9000); }
+    leaveRoom(); toast("No encontramos la sala " + S.code + ". Revisá el código o pedile un link nuevo.");
   }
 }
 function send(msg){ if (CONN && CONN.open){ try { CONN.send(msg); } catch(e){} } }
@@ -2742,26 +2733,18 @@ async function joinRoom(raw){
   if (!p){ toast("No se pudo conectar. Revisá tu conexión y probá de nuevo."); return; }
   PEER = p; S.code = code; S.role = "guest";
   resetRoomState(); S.hostSeen = false; S.seenNo = -1;
-  S.joinUntil = Date.now() + JOIN_PATIENCE;
-  connectHost();
-  showScreen("wait"); renderWait();
-  S.joinTimer = setTimeout(() => { if (!S.hostSeen && S.role === "guest"){ leaveRoom(); toast(notFoundMsg(code), 9000); } }, JOIN_PATIENCE + 5000);
-}
-function connectHost(){
-  if (!PEER || PEER.destroyed) return;
-  if (PEER.disconnected){ try { PEER.reconnect(); } catch(e){} }
-  const old = CONN;
-  const conn = PEER.connect(ID_PREFIX + S.code.toLowerCase(), { reliable: true, serialization: "json" });
+  const conn = p.connect(ID_PREFIX + code.toLowerCase(), { reliable: true, serialization: "json" });
   CONN = conn;
-  if (old && old !== conn) try { old.close(); } catch(e){}
-  conn.on("open", () => { if (CONN === conn) send({ t: "hi", v: VERSION, uid: UID, name: S.name, col: S.color }); });
+  conn.on("open", () => send({ t: "hi", v: VERSION, uid: UID, name: S.name, col: S.color }));
   conn.on("data", d => { if (CONN === conn) guestOnData(d); });
-  conn.on("close", () => { if (CONN === conn && S.hostSeen) hostGone(); });
+  conn.on("close", () => { if (CONN === conn) hostGone(); });
   conn.on("error", () => {});
+  showScreen("wait"); renderWait();
+  S.joinTimer = setTimeout(() => { if (!S.hostSeen && S.role === "guest" && CONN === conn){ leaveRoom(); toast("No encontramos la sala " + code + ". Revisá el código o pedile un link nuevo."); } }, 15000);
 }
 
 function leaveRoom(){
-  clearTimeout(S.joinTimer); clearTimeout(S.retryT);
+  clearTimeout(S.joinTimer);
   if (S.role === "host"){
     for (const conn of GUESTS.keys()){ try { if (conn.open) conn.send({ t: "bye" }); } catch(e){} const c = conn; setTimeout(() => { try { c.close(); } catch(e){} }, 150); }
     GUESTS.clear();
@@ -3342,7 +3325,7 @@ function renderWait(){
   });
   const n = S.players.length;
   $("playersLbl").textContent = "Jugadores · " + n + " de " + MAX_PLAYERS;
-  if (host) $("waitHelp").textContent = n < 2 ? "Mandá el link a los demás y volvé enseguida a esta pantalla: mientras estás en otra app la sala se pausa y nadie puede entrar." : "Ya pueden jugar. Elegí el modo y la duración, y empezá cuando estén todos.";
+  if (host) $("waitHelp").textContent = n < 2 ? "Mandá el link a los demás. Al abrirlo entran directo a esta sala. Dejá esta pantalla abierta mientras esperás." : "Ya pueden jugar. Elegí el modo y la duración, y empezá cuando estén todos.";
   else $("waitHelp").textContent = S.hostSeen ? "Estás adentro. Cuando " + pname(0) + " empiece, arranca la cuenta regresiva. Podés invitar a más gente con el link." : "Buscando la sala…";
   document.querySelectorAll("#modeOpts .mode").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.mode === S.cfg.mode)); b.disabled = !host; });
   document.querySelectorAll("#durChips .chip").forEach(ch => { ch.setAttribute("aria-pressed", String(+ch.dataset.dur === S.cfg.dur)); ch.disabled = !host; });
