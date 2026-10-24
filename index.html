@@ -6,7 +6,7 @@
 <title>Crucigramas VS</title>
 <meta name="description" content="Duelo de crucigramas en tiempo real: los dos juegan el mismo tablero y cada palabra es de quien la completa primero.">
 <meta property="og:title" content="Crucigramas VS">
-<meta property="og:description" content="Te desafiaron a un duelo de crucigramas. Gana quien complete más palabras.">
+<meta property="og:description" content="Te desafiaron a un duelo de crucigramas. Gana quien sume más puntos.">
 <meta name="theme-color" content="#2754D8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='32' height='64' rx='8' fill='%232754D8'/%3E%3Crect x='32' width='32' height='64' rx='8' fill='%23D9690B'/%3E%3Crect x='24' width='16' height='64' fill='%23D9690B'/%3E%3Crect x='24' width='8' height='64' fill='%232754D8'/%3E%3Ctext x='32' y='45' font-family='Arial Black,Arial' font-weight='900' font-size='30' fill='%23fff' text-anchor='middle'%3EVS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +17,7 @@
 :root{
   --bg:#E8EBF1; --surface:#FFFFFF; --ink:#131A2B; --muted:#58627A; --line:#C6CEDB;
   --you:#2754D8; --you-soft:#C9D7FF; --rival:#D9690B; --rival-soft:#FFD6AE;
-  --sel:#FFD84D; --word:#FFF1BF; --bad:#D23434; --key:#D9DEE8;
+  --sel:#FFD84D; --word:#FFF1BF; --bad:#D23434; --key:#D9DEE8; --ok:#1E8A4C; --d2:#B26A00; --d3:#C42B2B;
   --cell:#FFFFFF; --block:#1B2238;
   --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -28,13 +28,13 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
   --you:#7D9CFF; --you-soft:#2A3F86; --rival:#FFA24D; --rival-soft:#6A3E12;
-  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44;
+  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44; --ok:#5BD08D; --d2:#F2B84B; --d3:#FF7E7E;
   --cell:#26304A; --block:#05070D; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#0E1220; --surface:#182033; --ink:#E7EBF5; --muted:#8E98AF; --line:#2B3450;
   --you:#7D9CFF; --you-soft:#2A3F86; --rival:#FFA24D; --rival-soft:#6A3E12;
-  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44;
+  --sel:#9C7E10; --word:#3D3718; --bad:#FF6B6B; --key:#232C44; --ok:#5BD08D; --d2:#F2B84B; --d3:#FF7E7E;
   --cell:#26304A; --block:#05070D; color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -82,11 +82,17 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .players{display:flex;flex-direction:column;gap:8px}
 .player{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);background:var(--bg)}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
-.dot.you{background:var(--you)} .dot.rv{background:var(--rival)}
+.dot.you{background:var(--you)} .dot.rv{background:var(--rival)} .dot.pc{background:var(--pc)}
 .dot.off{background:transparent;border:2px dashed var(--muted)}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:8px 14px;font-weight:700}
 .chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:36px;height:36px;border-radius:50%;border:3px solid var(--surface);background:var(--l);box-shadow:0 0 0 1.5px var(--line);padding:0;position:relative}
+.sw[aria-checked=true]{box-shadow:0 0 0 2.5px var(--ink)}
+.sw[aria-checked=true]::after{content:"";position:absolute;left:8px;top:8px;width:13px;height:7px;border:solid #fff;border-width:0 0 3px 3px;transform:rotate(-45deg)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sw{background:var(--d)}}
+:root[data-theme="dark"] .sw{background:var(--d)}
 
 /* game */
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
@@ -95,9 +101,33 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .side .nm{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .side .pts{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 .side.you .pts{color:var(--you)} .side.rv .pts{color:var(--rival)}
+.side .wc{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
 .clock{font-family:var(--f-display);font-weight:600;font-size:30px;font-variant-numeric:tabular-nums;text-align:center;line-height:1}
 .clock small{display:block;font-family:var(--f-body);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 .clock.low{color:var(--bad)}
+.others{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;min-width:0;justify-self:end;width:100%;max-width:220px}
+.others li{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;font-size:13px;font-weight:700;min-width:0}
+.others .on{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.others .op{font-family:var(--f-display);font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--pc)}
+.others li.gone{opacity:.5}
+.boardtag{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--muted)}
+.boardtag .who{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.rotbar{flex:1 1 120px;height:6px;border-radius:99px;background:var(--line);overflow:hidden;min-width:80px;max-width:240px}
+.rotbar i{display:block;height:100%;background:var(--ink);transition:width .9s linear}
+.rotbar.soon i{background:var(--bad)}
+.modes{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:560px){.modes{grid-template-columns:1fr 1fr}}
+.mode{border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.mode b{font-family:var(--f-display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.mode span{font-size:13px;color:var(--muted)}
+.mode[aria-pressed=true]{border-color:var(--you);box-shadow:inset 0 0 0 1.5px var(--you);background:var(--surface)}
+.mode:disabled{cursor:default;opacity:1}
+.mode:disabled:not([aria-pressed=true]){opacity:.5}
+.chip:disabled{cursor:default}
+.ptag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-left:auto}
+.bsel{display:flex;gap:6px;flex-wrap:wrap}
+.bsel button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.bsel button[aria-pressed=true]{border-color:var(--ink)}
 
 .game-grid{display:grid;grid-template-columns:1fr;gap:16px}
 @media (min-width:900px){.game-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}}
@@ -109,13 +139,20 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 .cell.void{background:transparent;cursor:default}
 .cell .n{position:absolute;top:0;left:1px;font-size:max(7px,calc(100cqw / var(--cols) * .27));font-weight:700;color:var(--muted);line-height:1.1}
 .cell.inword{background:var(--word)}
-.cell.own-me{background:var(--you-soft)}
-.cell.own-rv{background:var(--rival-soft)}
-.cell.own-split{background:linear-gradient(135deg,var(--you-soft) 50%,var(--rival-soft) 50%)}
+.cell.own{background:var(--oc)}
+.cell.own2{background:linear-gradient(135deg,var(--oc) 50%,var(--oc2) 50%)}
 .cell.pend{background:var(--you-soft);box-shadow:inset 0 0 0 2px var(--you);animation:pulse 1s ease-in-out infinite}
 .cell.sel{background:var(--sel);box-shadow:inset 0 0 0 2px var(--ink)}
 .cell.bad{color:var(--bad);animation:shake .35s}
 .cell.flash{animation:pop .45s}
+.cell.reveal{background:color-mix(in srgb,var(--bad) 9%,var(--cell));color:var(--bad)}
+.clue-col .sol{display:none;margin-top:2px;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--bad)}
+.clues.ended li:not(.own) .sol{display:block}
+.endbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:10px;padding:10px 14px}
+.endbar.asked{border-left-color:var(--rival);background:var(--rival-soft)}
+.endbar p{margin:0;font-weight:700}
+.endbar small{display:block;font-weight:400;color:var(--muted)}
+.res-miss{font-size:14px}
 @keyframes pulse{50%{opacity:.6}}
 @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 @keyframes pop{40%{transform:scale(1.12)}}
@@ -153,14 +190,16 @@ body.touch .hint{display:none}
   .board{width:min(100%,calc(var(--cols) * 40px),max(380px,calc(100vh - 250px)))}
 }
 .clues ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.clues li button{width:100%;text-align:left;border:0;background:transparent;border-radius:var(--r);padding:6px 8px;display:grid;grid-template-columns:24px 1fr auto;gap:6px;align-items:baseline;line-height:1.3}
+.clues li button{width:100%;text-align:left;border:0;background:transparent;border-radius:var(--r);padding:6px 8px;display:grid;grid-template-columns:24px 1fr auto auto;gap:6px;align-items:baseline;line-height:1.3}
 .clues li button:hover{background:var(--word)}
 .clues li.active button{background:var(--word)}
 .clues .num{font-weight:700;font-variant-numeric:tabular-nums}
 .clues .len{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
-.clues li.me .cl,.clues li.rv .cl{text-decoration:line-through;text-decoration-thickness:2px}
-.clues li.me .cl{text-decoration-color:var(--you)} .clues li.rv .cl{text-decoration-color:var(--rival)}
-.clues li.me .num{color:var(--you)} .clues li.rv .num{color:var(--rival)}
+.pp{display:inline-block;min-width:26px;text-align:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;border-radius:999px;padding:1px 6px;border:1.5px solid var(--line);color:var(--muted)}
+.pp.d2{border-color:var(--d2);color:var(--d2)} .pp.d3{border-color:var(--d3);color:var(--d3);background:color-mix(in srgb,var(--d3) 10%,transparent)}
+.clues li.own .pp{opacity:.55}
+.clues li.own .cl{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--oc)}
+.clues li.own .num{color:var(--oc)}
 
 /* overlays */
 .overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-left,0px));z-index:20}
@@ -171,6 +210,18 @@ body.touch .hint{display:none}
 .final .you{color:var(--you)} .final .rv{color:var(--rival)} .final .sep{color:var(--muted);font-size:28px}
 .modal p{margin:0;color:var(--muted)}
 .modal .row{justify-content:center}
+.modal{max-height:calc(100% - 8px);overflow-y:auto}
+.tally{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px 14px;text-align:left;font-variant-numeric:tabular-nums;font-size:14px}
+.tally .h{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tally .n{text-align:right} .tally .you{color:var(--you);font-weight:700} .tally .rv{color:var(--rival);font-weight:700}
+.rm{display:flex;flex-direction:column;gap:8px;text-align:left;border-top:1px solid var(--line);padding-top:14px}
+.rm-players{display:flex;flex-direction:column;gap:6px}
+.rm-p{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:var(--r);background:var(--bg)}
+.rm-p .who{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.chip-s{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;border:1.5px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip-s.ok{border-color:var(--ok);color:var(--ok)} .chip-s.off{border-style:dashed}
+.rm-ask{border-left:4px solid var(--rival);background:var(--rival-soft);padding:10px 12px;border-radius:0 var(--r) var(--r) 0;font-weight:700;display:flex;flex-direction:column;gap:10px}
+.rm-ask .row{justify-content:flex-start}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center}
 </style>
 </head>
@@ -183,18 +234,22 @@ body.touch .hint{display:none}
       <h1>Crucigramas</h1>
       <div class="vs" aria-label="versus"><span>V</span><span>S</span></div>
     </header>
-    <p class="lede">Duelo en tiempo real: los dos juegan el mismo crucigrama y cada palabra es de quien la completa primero. Gana quien junte más palabras antes de que se acabe el tiempo.</p>
+    <p class="lede">Crucigramas en tiempo real para 2 a 5 jugadores. Cada palabra es de quien la completa primero y gana quien sume más puntos antes de que se acabe el tiempo.</p>
 
     <div class="lobby-grid">
       <div class="panel">
         <p class="invite" id="inviteNote" hidden></p>
         <div class="field">
           <label class="label" for="nick">Tu nombre</label>
-          <input type="text" id="nick" maxlength="20" autocomplete="off" placeholder="Cómo te ve tu rival">
+          <input type="text" id="nick" maxlength="20" autocomplete="off" placeholder="Cómo te ven los demás">
         </div>
-        <p class="notice" id="noNet" hidden>No se pudo cargar el modo duelo. Revisá tu conexión a internet y recargá la página. Mientras tanto podés practicar solo.</p>
+        <div class="field">
+          <span class="label" id="colLbl">Tu color</span>
+          <div class="swatches" id="swatches" role="radiogroup" aria-labelledby="colLbl"></div>
+        </div>
+        <p class="notice" id="noNet" hidden>No se pudo cargar el juego en línea. Revisá tu conexión a internet y recargá la página. Mientras tanto podés practicar solo.</p>
         <div class="stack" id="duelControls">
-          <button class="btn primary" id="btnCreate">Crear sala de duelo</button>
+          <button class="btn primary" id="btnCreate">Crear sala</button>
           <div class="field">
             <label class="label" for="joinCode">Unirte con código</label>
             <div class="row">
@@ -209,12 +264,13 @@ body.touch .hint{display:none}
       <div class="panel">
         <h2>Cómo se juega</h2>
         <ul class="rules">
-          <li>Uno crea la sala y le pasa el link o el código de 4 letras al otro.</li>
-          <li>Los dos ven el mismo tablero.</li>
-          <li>Tus letras a medio escribir son privadas; tu rival solo ve las palabras que completás.</li>
+          <li>Uno crea la sala y le pasa el link o el código de 4 letras a los demás. Entran hasta 5.</li>
+          <li>En la sala se elige el modo. <strong>Mismo tablero</strong>: todos resuelven el mismo crucigrama. <strong>Rotación</strong>: cada uno arranca con su tablero y cada 90 segundos los tableros pasan al siguiente.</li>
+          <li>Tus letras a medio escribir son privadas; los demás solo ven las palabras que completás.</li>
           <li>Una palabra completa queda fija con el color de quien la ganó.</li>
           <li>Las letras incorrectas no restan.</li>
-          <li>Empate en palabras: gana quien llegó primero a ese puntaje.</li>
+          <li>Cada palabra suma sus letras multiplicadas por la dificultad de la pista: fácil ×1, media ×1,5, difícil ×2.</li>
+          <li>Empate en puntos: gana quien llegó primero a ese puntaje.</li>
         </ul>
       </div>
     </div>
@@ -230,11 +286,18 @@ body.touch .hint{display:none}
         <button class="btn" id="btnCopy">Copiar código</button>
       </div>
       <p class="empty" id="waitHelp"></p>
-      <div class="players">
-        <div class="player"><span class="dot you"></span><strong id="waitMe">Vos</strong></div>
-        <div class="player"><span class="dot off" id="waitRvDot"></span><span id="waitRv">Esperando rival…</span></div>
+      <div class="field">
+        <span class="label" id="playersLbl">Jugadores</span>
+        <div class="players" id="playerList"></div>
       </div>
-      <div id="hostOpts" class="field" hidden>
+      <div class="field">
+        <span class="label">Modo</span>
+        <div class="modes" id="modeOpts">
+          <button class="mode" data-mode="mismo" aria-pressed="true"><b>Mismo tablero</b><span>Todos resuelven el mismo crucigrama. Cada palabra es de quien la completa primero.</span></button>
+          <button class="mode" data-mode="rotacion" aria-pressed="false"><b>Rotación</b><span>Cada uno arranca con su tablero y cada 90 segundos pasan al siguiente. Las palabras completas quedan; las letras sueltas se borran.</span></button>
+        </div>
+      </div>
+      <div class="field">
         <span class="label">Duración</span>
         <div class="chips" id="durChips">
           <button class="chip" data-dur="300" aria-pressed="false">5 min</button>
@@ -243,7 +306,7 @@ body.touch .hint{display:none}
         </div>
       </div>
       <div class="row">
-        <button class="btn primary" id="btnStart" hidden disabled>Empezar duelo</button>
+        <button class="btn primary" id="btnStart" hidden disabled>Empezar</button>
         <button class="btn ghost" id="btnLeaveWait">Salir</button>
       </div>
     </div>
@@ -252,12 +315,15 @@ body.touch .hint{display:none}
   <!-- GAME -->
   <section class="screen" id="game" hidden>
     <div class="score">
-      <div class="side you"><span class="nm" id="nmMe">Vos</span><span class="pts" id="ptsMe">0</span></div>
+      <div class="side you"><span class="nm" id="nmMe">Vos</span><span class="pts" id="ptsMe">0</span><span class="wc" id="wcMe"></span></div>
       <div class="clock" id="clock">0:00<small id="clockSub">restante</small></div>
-      <div class="side rv"><span class="nm" id="nmRv">Rival</span><span class="pts" id="ptsRv">0</span></div>
+      <div class="side rv" id="rvSide"><span class="nm" id="nmRv">Rival</span><span class="pts" id="ptsRv">0</span><span class="wc" id="wcRv"></span></div>
+      <ol class="others" id="others" hidden></ol>
     </div>
+    <div class="endbar" id="endBar" hidden><p id="endTxt"></p><div class="bsel" id="bsel" hidden></div><button class="btn primary" id="btnBackRes">Ver resultado</button></div>
     <div class="game-grid">
       <div class="play">
+        <div class="boardtag" id="boardTag" hidden><span class="who" id="boardWho"></span><span class="rotbar" id="rotBar"><i id="rotFill"></i></span><span id="rotTxt"></span></div>
         <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="Crucigrama"></div></div>
         <div class="cluebar">
           <button class="nav" id="prevW" aria-label="Palabra anterior">‹</button>
@@ -282,6 +348,13 @@ body.touch .hint{display:none}
     <h2 id="resTitle">¡Ganaste!</h2>
     <div class="final" id="resFinal"></div>
     <p id="resSub"></p>
+    <div class="tally" id="resTally"></div>
+    <p class="res-miss" id="resMiss" hidden></p>
+    <div class="rm" id="resRm" hidden>
+      <span class="label" id="rmLbl">Revancha</span>
+      <div class="rm-players" id="rmPlayers"></div>
+      <div class="rm-ask" id="rmAsk" hidden></div>
+    </div>
     <div class="row" id="resBtns"></div>
   </div>
 </div>
@@ -313,7 +386,7 @@ ASADO|Clásico argentino a la parrilla
 TANGO|Baile porteño por excelencia
 PAMPA|Llanura del centro argentino
 ANDES|Cordillera sudamericana
-PLATA|Metal precioso que nombra a un río
+PLATA|Metal precioso que nombra a un río|2
 TREN|Transporte que corre sobre rieles
 AVION|Vehículo con alas y turbinas
 BARCO|Embarcación grande
@@ -384,7 +457,7 @@ PUENTE|Une dos orillas
 TORRE|Construcción alta y angosta
 CASTILLO|Fortaleza de reyes
 REY|Monarca de un reino
-REINA|La pieza más poderosa del ajedrez
+REINA|La pieza más poderosa del ajedrez|2
 CORONA|La lleva el monarca en la cabeza
 ESPADA|Arma blanca larga
 ESCUDO|Protege del golpe
@@ -405,7 +478,7 @@ VERDE|Color del pasto
 NEGRO|Color de la ausencia de luz
 BLANCO|Color de la nieve
 AMARILLO|Color del limón
-NUMERO|Cifra o guarismo
+NUMERO|Cifra o guarismo|2
 CERO|Número que no suma nada
 UNO|Primer número natural
 DOS|Un par
@@ -465,7 +538,7 @@ CAMA|Mueble para dormir
 COCINA|Donde se prepara la comida
 JARDIN|Espacio con plantas en una casa
 ORO|Metal precioso amarillo
-HIERRO|Metal con el que se hace el acero
+HIERRO|Metal con el que se hace el acero|2
 PIEDRA|Roca chica
 ARENA|La hay en la playa y en el desierto
 HIELO|Agua congelada
@@ -479,7 +552,7 @@ TIEMPO|Lo mide el reloj
 HORA|Sesenta minutos
 MINUTO|Sesenta segundos
 ARCO|Lo defiende el arquero
-LIGA|Torneo largo entre equipos
+LIGA|Torneo largo entre equipos|2
 EQUIPO|Grupo que juega junto
 CAMPEON|Ganador del torneo
 TORTA|Se sopla en los cumpleaños
@@ -500,71 +573,71 @@ ASA|Parte de la taza para agarrarla
 AVE|Animal con plumas
 BAR|Lugar para tomar un café o una cerveza
 BOA|Serpiente que asfixia a su presa
-CAL|Polvo blanco para pintar paredes
-COL|Verdura de hojas, pariente del repollo
+CAL|Polvo blanco para pintar paredes|2
+COL|Verdura de hojas, pariente del repollo|2
 ECO|Repetición de un sonido que rebota
-EJE|Línea alrededor de la cual algo gira
-EGO|El yo, en psicología
-ERA|Período histórico
-ESO|Pronombre demostrativo neutro
-FAX|Aparato que enviaba documentos por teléfono
-FIN|Término, conclusión
+EJE|Línea alrededor de la cual algo gira|2
+EGO|El yo, en psicología|2
+ERA|Período histórico|2
+ESO|Pronombre demostrativo neutro|2
+FAX|Aparato que enviaba documentos por teléfono|2
+FIN|Término, conclusión|2
 GAS|Estado de la materia, como el vapor
 GEL|Producto para fijar el pelo
 HOY|Este día
-IDA|Viaje hacia un lugar, opuesto a vuelta
-IRA|Enojo muy fuerte
-LAS|Artículo femenino plural
-LEY|Norma dictada por el Congreso
-LOS|Artículo masculino plural
+IDA|Viaje hacia un lugar, opuesto a vuelta|2
+IRA|Enojo muy fuerte|2
+LAS|Artículo femenino plural|2
+LEY|Norma dictada por el Congreso|2
+LOS|Artículo masculino plural|2
 LUZ|Lo contrario de la oscuridad
 MAL|Lo contrario del bien
-NAO|Antigua nave a vela
-OCA|Ganso; también un juego de tablero
+NAO|Antigua nave a vela|3
+OCA|Ganso; también un juego de tablero|3
 OLA|Onda del mar
 PAZ|Ausencia de guerra
-PIO|Sonido del pollito
+PIO|Sonido del pollito|2
 RED|Malla para pescar
-RES|Animal vacuno
-RON|Bebida alcohólica de caña de azúcar
+RES|Animal vacuno|3
+RON|Bebida alcohólica de caña de azúcar|2
 SAL|Condimento blanco que se saca del mar
 SED|Ganas de tomar agua
 TIA|Hermana de tu madre o de tu padre
 TIO|Hermano de tu madre o de tu padre
 TOS|Se tiene con el resfrío
-VEZ|Ocasión, turno
-VID|Planta que da uvas
+VEZ|Ocasión, turno|2
+VID|Planta que da uvas|3
 VOZ|Sonido que sale de la garganta al hablar
-ZOO|Lugar con animales en exhibición, abreviado
-ACA|Aquí, en el Río de la Plata
-ASI|De esta manera
-AJI|Pimiento picante
-AMA|Dueña de casa
+ZOO|Lugar con animales en exhibición, abreviado|2
+ACA|Aquí, en el Río de la Plata|2
+ASI|De esta manera|2
+AJI|Pimiento picante|2
+AMA|Dueña de casa|3
 CHE|Interjección muy argentina
-DON|Talento natural
-DUO|Pareja de músicos
-FAN|Seguidor entusiasta
-FAZ|Cara, rostro
+DON|Talento natural|2
+DUO|Pareja de músicos|2
+FAN|Seguidor entusiasta|2
+FAZ|Cara, rostro|3
 FEO|Lo contrario de lindo
-GEN|Unidad de la herencia biológica
-HAZ|Rayo de luz; también manojo
-LAR|Hogar
-OSA|Hembra del oso
-REO|Acusado
-TEA|Antorcha
-TUL|Tela fina de los velos
-YEN|Moneda de Japón
-ZAR|Emperador de Rusia
-LEO|Signo zodiacal de agosto
+GEN|Unidad de la herencia biológica|2
+HAZ|Rayo de luz; también manojo|3
+LAR|Hogar|3
+OSA|Hembra del oso|2
+REO|Acusado|3
+TEA|Antorcha|3
+TUL|Tela fina de los velos|3
+YEN|Moneda de Japón|2
+ZAR|Emperador de Rusia|2
+LEO|Signo zodiacal de agosto|2
 APP|Aplicación del celular
 WEB|Sitio de internet
-BUG|Error en un programa
-ROL|Papel que se cumple
-DAR|Entregar
+BUG|Error en un programa|2
+ROL|Papel que se cumple|2
+DAR|Entregar|2
 VER|Percibir con los ojos
-SER|Verbo de la identidad
+SER|Verbo de la identidad|2
 OIR|Percibir sonidos
-MIO|Pronombre posesivo de primera persona
+MIO|Pronombre posesivo de primera persona|2
 AMOR|Sentimiento de cariño profundo
 ARTE|Pintura, música o escultura
 AUTO|Vehículo de cuatro ruedas
@@ -579,7 +652,7 @@ DEDO|Hay cinco en cada mano
 DUDA|Falta de certeza
 FARO|Torre con luz para guiar barcos
 FOCA|Mamífero marino de los acuarios
-GALA|Fiesta elegante
+GALA|Fiesta elegante|2
 HADA|Ser mágico con varita
 HILO|Se usa para coser
 HOJA|Parte verde de la planta
@@ -588,19 +661,19 @@ IMAN|Atrae el hierro
 JUGO|Líquido de la fruta exprimida
 LANA|Fibra que da la oveja
 LATA|Envase de metal
-LOMO|Espalda de un animal; también un corte de carne
+LOMO|Espalda de un animal; también un corte de carne|2
 LORO|Pájaro que repite palabras
 MASA|Mezcla de harina y agua
 MIEL|Dulce que hacen las abejas
-MODA|Lo que se usa en una época
+MODA|Lo que se usa en una época|2
 MONO|Primate juguetón
-MURO|Pared gruesa
+MURO|Pared gruesa|2
 NADA|Ninguna cosa
 NIDO|Casa del pájaro
 NOTA|Calificación de un examen
 NUEZ|Fruto seco de cáscara dura
-OBRA|Trabajo artístico o construcción
-ONDA|Ola; también buena vibra
+OBRA|Trabajo artístico o construcción|2
+ONDA|Ola; también buena vibra|2
 PALA|Herramienta para cavar
 PATO|Ave que hace cuac
 PAVO|Ave típica de Navidad en algunos países
@@ -608,14 +681,14 @@ PESO|Moneda argentina
 PIEL|Cubre el cuerpo
 PINO|Árbol de Navidad
 PISO|Suelo de una habitación
-POLO|Extremo de la Tierra; deporte a caballo
-POZO|Hoyo profundo para sacar agua
+POLO|Extremo de la Tierra; deporte a caballo|2
+POZO|Hoyo profundo para sacar agua|2
 RAMA|Brazo del árbol
 RANA|Anfibio que salta y croa
 RATA|Roedor grande
 ROCA|Piedra grande
 ROSA|Flor con espinas; también un color
-RUTA|Camino, carretera
+RUTA|Camino, carretera|2
 SAPO|Pariente de la rana
 SOPA|Plato líquido y caliente
 SUMA|Operación con el signo más
@@ -627,72 +700,72 @@ VASO|Recipiente para beber
 VELA|Da luz y se apaga soplando
 YATE|Barco de lujo
 YEMA|Parte amarilla del huevo
-ZONA|Área, región
+ZONA|Área, región|2
 AULA|Sala de clases
 BEBE|Niño muy pequeño
 BESO|Muestra de cariño con los labios
 BICI|Rodado de dos pedales, abreviado
 CAJA|Recipiente con tapa
-CANA|Pelo blanco
-CRUZ|Signo de la suma
-CUBO|Figura con seis caras cuadradas
-DATO|Información
+CANA|Pelo blanco|2
+CRUZ|Signo de la suma|2
+CUBO|Figura con seis caras cuadradas|2
+DATO|Información|2
 EDAD|Años que tiene una persona
-FAMA|Lo que tienen las celebridades
+FAMA|Lo que tienen las celebridades|2
 FILA|Hilera de personas esperando
-FOCO|Lámpara eléctrica
+FOCO|Lámpara eléctrica|2
 FRIO|Lo que se siente en invierno
 GOMA|Sirve para borrar
 GRIS|Mezcla de blanco y negro
-HABA|Legumbre verde
-HIGO|Fruto de la higuera
+HABA|Legumbre verde|3
+HIGO|Fruto de la higuera|2
 HIJO|Varón respecto de sus padres
 HUMO|Sale del fuego
 JEFE|Persona a cargo
 JOYA|Anillo, collar o pulsera valiosos
 JUEZ|Dicta sentencia
-LADO|Costado
-LIMA|Herramienta para las uñas; capital de Perú
+LADO|Costado|2
+LIMA|Herramienta para las uñas; capital de Perú|2
 LOCO|Que perdió el juicio
-LUJO|Abundancia de cosas caras
-MIGA|Parte blanda del pan
-MINA|Excavación para sacar minerales
-MISA|Ceremonia católica
-MITO|Relato fabuloso de los antiguos
+LUJO|Abundancia de cosas caras|2
+MIGA|Parte blanda del pan|2
+MINA|Excavación para sacar minerales|2
+MISA|Ceremonia católica|2
+MITO|Relato fabuloso de los antiguos|2
 MOTO|Vehículo de dos ruedas con caño de escape
-NAVE|Barco o vehículo espacial
+NAVE|Barco o vehículo espacial|2
 NUDO|Se hace con los cordones
 OLLA|Recipiente para cocinar guisos
 ONCE|Diez más uno
-PAIS|Nación
+PAIS|Nación|2
 PATA|Pierna de un animal
 PILA|Da energía a un control remoto
-SACO|Prenda de abrigo con botones
+SACO|Prenda de abrigo con botones|2
 SOGA|Cuerda gruesa
 TAXI|Auto amarillo y negro en Buenos Aires
-TEMA|Asunto, materia
-URNA|Caja donde se vota
-VENA|Lleva la sangre al corazón
+TEMA|Asunto, materia|2
+URNA|Caja donde se vota|2
+VENA|Lleva la sangre al corazón|2
 VIDA|Lo contrario de muerte
 VOTO|Se pone en la urna
-YESO|Polvo blanco para enyesar un hueso roto
-ZUMO|Jugo, en España
+YESO|Polvo blanco para enyesar un hueso roto|2
+ZUMO|Jugo, en España|2
 AMAR|Querer mucho
 LEER|Lo que hacés con un libro
 OLER|Percibir con la nariz
 REIR|Soltar carcajadas
-ATAR|Unir con una cuerda
-ARAR|Abrir surcos en la tierra
-ORAR|Rezar
-OSAR|Atreverse
-USAR|Utilizar
-UNIR|Juntar
+ATAR|Unir con una cuerda|2
+ARAR|Abrir surcos en la tierra|3
+ORAR|Rezar|2
+OSAR|Atreverse|3
+USAR|Utilizar|2
+UNIR|Juntar|2
 ALTO|Lo contrario de bajo
 BAJO|Lo contrario de alto
 MALO|Lo contrario de bueno
 CARO|Lo contrario de barato
 DURO|Lo contrario de blando
-RICO|Con mucho dinero; también sabroso
+RICO|Con mucho dinero; también sabroso|2
 SECO|Sin agua
 MUDO|Que no habla
 SANO|Que tiene salud
@@ -705,86 +778,86 @@ ROMA|Capital de Italia
 PIBE|Chico, en lunfardo
 PUMA|Felino americano de color pardo
 ORCA|Ballena asesina
-TERO|Ave que grita en la pampa
-ALCE|Ciervo grande del norte
-BUEY|Toro castrado de trabajo
-MULA|Hija de yegua y burro
+TERO|Ave que grita en la pampa|2
+ALCE|Ciervo grande del norte|2
+BUEY|Toro castrado de trabajo|3
+MULA|Hija de yegua y burro|2
 FLAN|Postre de huevo y leche con caramelo
 PURE|Papa pisada
 MAIZ|Cereal del choclo
 KIWI|Fruta verde peluda
 COCO|Fruta de palmera
 APIO|Verdura de tallo largo
-SOJA|Legumbre muy cultivada en Argentina
+SOJA|Legumbre muy cultivada en Argentina|2
 MANI|Fruto seco salado de la picada
 SOFA|Sillón para varias personas
-BUZO|Prenda de abrigo; también el que bucea
+BUZO|Prenda de abrigo; también el que bucea|2
 CEJA|Pelo sobre el ojo
-NUCA|Parte de atrás del cuello
+NUCA|Parte de atrás del cuello|2
 WIFI|Red inalámbrica
 CHAT|Conversación por mensajes
-BLOG|Diario en internet
+BLOG|Diario en internet|2
 LINK|Enlace
 DRON|Aparato volador a control remoto
-ARPA|Instrumento de cuerdas de forma triangular
+ARPA|Instrumento de cuerdas de forma triangular|2
 CORO|Grupo que canta
 ROCK|Género de guitarras eléctricas
 MAGO|Hace trucos de magia
 GOLF|Deporte de hoyos y palos
 CLUB|Asociación deportiva
 DUNA|Montaña de arena
-CABO|Punta de tierra que entra en el mar
-OMBU|Árbol emblemático de la pampa
+CABO|Punta de tierra que entra en el mar|3
+OMBU|Árbol emblemático de la pampa|3
 ALGA|Planta del mar
-ALMA|Espíritu
-ACTA|Documento de una reunión
-ANIS|Bebida con sabor a regaliz
-AURA|Halo que rodea a alguien
-AZAR|Casualidad
-BOLO|Pieza que se derriba en el bowling
-CASO|Asunto
-CERA|La hacen las abejas; sirve para velas
-CIMA|Punta de la montaña
-CITA|Encuentro acordado
-COSA|Objeto
-DAMA|Señora
-DIVA|Cantante famosa y caprichosa
-DOMO|Cúpula
-ELFO|Ser mágico de orejas puntiagudas
-ENTE|Organismo, entidad
-GAMA|Escala de colores
+ALMA|Espíritu|2
+ACTA|Documento de una reunión|3
+ANIS|Bebida con sabor a regaliz|3
+AURA|Halo que rodea a alguien|3
+AZAR|Casualidad|2
+BOLO|Pieza que se derriba en el bowling|2
+CASO|Asunto|2
+CERA|La hacen las abejas; sirve para velas|2
+CIMA|Punta de la montaña|2
+CITA|Encuentro acordado|2
+COSA|Objeto|2
+DAMA|Señora|2
+DIVA|Cantante famosa y caprichosa|2
+DOMO|Cúpula|3
+ELFO|Ser mágico de orejas puntiagudas|2
+ENTE|Organismo, entidad|3
+GAMA|Escala de colores|3
 GOTA|Pequeña porción de líquido
-JUDO|Arte marcial japonés
+JUDO|Arte marcial japonés|2
 LOGO|Símbolo de una marca
 LUPA|Lente que agranda
 META|Línea de llegada
-MIMO|Caricia; también artista que actúa sin hablar
+MIMO|Caricia; también artista que actúa sin hablar|2
 NENE|Chico pequeño
-PIPA|Se fuma con tabaco
-PLAN|Proyecto
+PIPA|Se fuma con tabaco|2
+PLAN|Proyecto|2
 RAMO|Conjunto de flores
-RIMA|Coincidencia de sonidos al final de los versos
-SAGA|Serie de historias
-SEDA|Tela fina hecha por un gusano
-TACO|Parte del zapato; también comida mexicana
-TIRA|Banda larga y angosta
-TOGA|Vestimenta del juez
-TUBO|Caño
-VALS|Baile en tres tiempos
+RIMA|Coincidencia de sonidos al final de los versos|2
+SAGA|Serie de historias|2
+SEDA|Tela fina hecha por un gusano|2
+TACO|Parte del zapato; también comida mexicana|2
+TIRA|Banda larga y angosta|2
+TOGA|Vestimenta del juez|2
+TUBO|Caño|2
+VALS|Baile en tres tiempos|2
 YOGA|Disciplina de posturas y respiración
-ZINC|Metal grisáceo
+ZINC|Metal grisáceo|3
 MAMA|Madre, cariñosamente
 NIÑA|Chica pequeña
-OBOE|Instrumento de viento de madera
-OCIO|Tiempo libre
+OBOE|Instrumento de viento de madera|3
+OCIO|Tiempo libre|2
 TIZA|Se escribe con ella en el pizarrón
 UÑA|Crece en la punta de los dedos
 EURO|Moneda de Alemania y Francia
-REAL|Moneda de Brasil
+REAL|Moneda de Brasil|2
 SEIS|Caras de un dado
 OCHO|Patas de una araña
 DOCE|Diez más dos
-PALMA|Interior de la mano; también un árbol
+PALMA|Interior de la mano; también un árbol|2
 BARRIO|Parte de una ciudad, como Recoleta o Palermo
 BOLSA|Sirve para llevar las compras
 BRAZO|Va del hombro a la mano
@@ -796,27 +869,27 @@ CAMPO|Terreno fuera de la ciudad
 CARNE|Alimento del asado
 CARRO|Vehículo con ruedas tirado por caballos
 CERCA|A poca distancia
-CHAPA|Lámina de metal
+CHAPA|Lámina de metal|2
 CIELO|Donde están las nubes
-CINTA|Tira larga y angosta
+CINTA|Tira larga y angosta|2
 CLAVO|Se clava con martillo
 COCHE|Auto, en España
 CONEJO|Animal de orejas largas que sale de la galera
 CUELLO|Une la cabeza con el cuerpo
-CUERDA|Soga
-CULTURA|Conjunto de costumbres de un pueblo
-DANZA|Baile
+CUERDA|Soga|2
+CULTURA|Conjunto de costumbres de un pueblo|2
+DANZA|Baile|2
 DEUDA|Lo que se debe
-DIOSA|Deidad femenina
+DIOSA|Deidad femenina|2
 DUCHA|Baño de lluvia
 DUENDE|Ser mágico pequeño y travieso
 ENERO|Primer mes del año
 FEBRERO|Segundo mes del año
-MARZO|Mes en que empieza el otoño en Argentina
+MARZO|Mes en que empieza el otoño en Argentina|2
 ABRIL|Cuarto mes del año
 MAYO|Mes de la Revolución de 1810
-JUNIO|Mes del Día de la Bandera
-JULIO|Mes del Día de la Independencia argentina
+JUNIO|Mes del Día de la Bandera|2
+JULIO|Mes del Día de la Independencia argentina|2
 AGOSTO|Octavo mes del año
 OCTUBRE|Décimo mes del año
 NOVIEMBRE|Penúltimo mes del año
@@ -830,22 +903,22 @@ DOMINGO|Último día de la semana
 ENANO|Hay siete con Blancanieves
 ESCALERA|Tiene escalones
 ESPALDA|Parte trasera del torso
-ETAPA|Fase de un proceso
+ETAPA|Fase de un proceso|2
 FALDA|Pollera
 FECHA|Día, mes y año
 FERIA|Mercado al aire libre
 FIDEO|Pasta larga y fina
-FIRMA|Nombre escrito a mano para validar algo
-FONDO|Parte más baja o lejana
+FIRMA|Nombre escrito a mano para validar algo|2
+FONDO|Parte más baja o lejana|2
 FRUTA|La manzana o la pera, por ejemplo
-FUENTE|Origen de algo; también un tipo de letra
+FUENTE|Origen de algo; también un tipo de letra|2
 GALLO|Canta al amanecer
 GANSO|Ave parecida al pato, más grande
-GARRA|Uña fuerte de un ave de presa
+GARRA|Uña fuerte de un ave de presa|2
 GENTE|Personas
 GLOBO|Se infla con aire o helio
 GORDO|Lo contrario de flaco
-GRANO|Semilla de un cereal
+GRANO|Semilla de un cereal|2
 GRITO|Voz muy fuerte
 GRUPO|Conjunto de personas
 GUANTE|Abriga la mano
@@ -855,8 +928,8 @@ HAMBRE|Ganas de comer
 HARINA|Polvo de trigo molido
 HELADO|Postre frío
 HERMANA|Hija de los mismos padres
-HIERBA|Pasto
-HOGAR|Casa, familia
+HIERBA|Pasto|2
+HOGAR|Casa, familia|2
 HOMBRO|Une el brazo al cuerpo
 HONGO|Crece en lugares húmedos; algunos se comen
 HORNO|Se usa para cocinar pizzas y tortas
@@ -878,31 +951,31 @@ LAMPARA|Da luz en una habitación
 LARGO|Lo contrario de corto
 LECHUGA|Verdura base de la ensalada
 LENGUA|Órgano del gusto; también idioma
-LENTE|Vidrio que aumenta o corrige la vista
+LENTE|Vidrio que aumenta o corrige la vista|2
 LENTEJA|Legumbre chiquita y redonda
 LETRA|Hay veintisiete en el abecedario
 LIBRE|Que no está preso ni ocupado
 LINEA|Raya recta
 LISTA|Enumeración de cosas
 LLAMA|Fuego; también camélido andino
-LLANTA|Aro metálico de la rueda
-LUGAR|Sitio, espacio
+LLANTA|Aro metálico de la rueda|2
+LUGAR|Sitio, espacio|2
 MADERA|Material que sale de los árboles
 MALETA|Valija
-MANTA|Frazada liviana
+MANTA|Frazada liviana|2
 MANTECA|Grasa de la leche para untar
-MARCO|Rodea un cuadro
+MARCO|Rodea un cuadro|2
 MARIPOSA|Insecto de alas de colores
 MASCOTA|Animal de compañía
 MEDIA|Prenda que cubre el pie
-MEDIO|Centro, mitad
+MEDIO|Centro, mitad|2
 MELON|Fruta grande de pulpa dulce
 MENTE|Donde están los pensamientos
 MERCADO|Lugar para comprar y vender
 METAL|El hierro o el cobre, por ejemplo
 METRO|Unidad de longitud; también tren subterráneo
 MIEDO|Lo que da una película de terror
-MILLA|Unidad de distancia anglosajona
+MILLA|Unidad de distancia anglosajona|2
 MOCHILA|Bolso que se lleva en la espalda
 MONEDA|Dinero de metal
 MOSCA|Insecto molesto que zumba
@@ -915,7 +988,7 @@ NOVIA|Pareja de un muchacho
 NUEVO|Lo contrario de viejo
 OBRERO|Trabaja en una fábrica o una obra
 OFICINA|Lugar de trabajo con escritorios
-OLIVO|Árbol de la aceituna
+OLIVO|Árbol de la aceituna|2
 OMBLIGO|Cicatriz en el centro de la panza
 ORILLA|Borde del río o del mar
 PAGINA|Cara de una hoja de libro
@@ -927,19 +1000,19 @@ PARED|Muro de una habitación
 PARQUE|Espacio verde de la ciudad
 PASTO|Hierba que cubre el campo
 PATIO|Espacio abierto dentro de una casa
-PECHO|Parte delantera del torso
+PECHO|Parte delantera del torso|2
 PEINE|Sirve para arreglar el pelo
 PELUCA|Pelo postizo
-PERLA|Gema que se forma en una ostra
+PERLA|Gema que se forma en una ostra|2
 PESCADO|Pez que se come
 PIERNA|Extremidad para caminar
 PINGUINO|Ave que no vuela y vive en el frío
 PIRAMIDE|Monumento de Egipto
-PISTA|Indicio; también lugar donde aterrizan aviones
+PISTA|Indicio; también lugar donde aterrizan aviones|2
 PLATO|Recipiente para servir comida
 PLUMA|Cubre el cuerpo de las aves
 POSTRE|Se come al final
-PRADO|Campo con pasto
+PRADO|Campo con pasto|2
 PRECIO|Lo que cuesta algo
 PREMIO|Recompensa al ganador
 PRIMO|Hijo de tu tío
@@ -951,8 +1024,8 @@ RAIZ|Parte de la planta bajo tierra
 RAYO|Descarga eléctrica de una tormenta
 RECETA|Instrucciones para cocinar un plato
 REGLA|Sirve para medir y trazar líneas
-RESTO|Lo que sobra
-ROBLE|Árbol de madera dura
+RESTO|Lo que sobra|2
+ROBLE|Árbol de madera dura|2
 RODILLA|Articulación de la pierna
 RUEDA|Pieza redonda que gira
 RUIDO|Sonido molesto
@@ -963,7 +1036,7 @@ SANDIA|Fruta grande verde por fuera y roja por dentro
 SANGRE|Líquido rojo del cuerpo
 SELLO|Se pegaba en las cartas
 SEMILLA|De ella nace una planta
-SENDA|Camino angosto
+SENDA|Camino angosto|2
 SERPIENTE|Reptil sin patas
 SIESTA|Descanso después de almorzar
 SIGLO|Cien años
@@ -971,29 +1044,29 @@ SILENCIO|Ausencia de ruido
 SOBRE|Envoltorio de una carta
 SOMBRERO|Prenda para la cabeza con ala
 SONRISA|Gesto de alegría con la boca
-SUELO|Piso
+SUELO|Piso|2
 SUELDO|Pago por un trabajo
-TABLA|Pieza plana de madera
+TABLA|Pieza plana de madera|2
 TALLER|Lugar donde se arreglan autos
 TAMBOR|Instrumento de percusión
 TARDE|Entre el mediodía y la noche
 TARJETA|De crédito o de débito
 TECHO|Cubre una casa
-TEJADO|Techo de tejas
+TEJADO|Techo de tejas|2
 TENEDOR|Cubierto con dientes
-TIENDA|Negocio; también carpa
+TIENDA|Negocio; también carpa|2
 TIMBRE|Suena al llegar visitas
 TINTA|Líquido de la lapicera
 TOALLA|Sirve para secarse
 TORMENTA|Lluvia con rayos y truenos
 TORTUGA|Reptil lento con caparazón
-TRAJE|Saco y pantalón haciendo juego
+TRAJE|Saco y pantalón haciendo juego|2
 TRIGO|Cereal con el que se hace harina
 TRUENO|Ruido que sigue al rayo
 TUERCA|Se enrosca en un tornillo
-TUMBA|Sepulcro
+TUMBA|Sepulcro|2
 TUNEL|Paso subterráneo
-VALLE|Llanura entre montañas
+VALLE|Llanura entre montañas|2
 VAPOR|Agua en estado gaseoso
 VECINO|Vive en la casa de al lado
 VELERO|Barco a vela
@@ -1005,7 +1078,7 @@ YERBA|Se usa para el mate
 ZANAHORIA|Verdura naranja que comen los conejos
 ZAPATILLA|Calzado deportivo
 ZAPATO|Calzado de vestir
-ANDAR|Caminar
+ANDAR|Caminar|2
 BAILAR|Moverse al ritmo de la música
 BEBER|Tomar un líquido
 BUSCAR|Tratar de encontrar
@@ -1015,7 +1088,7 @@ ABRIR|Lo contrario de cerrar
 COMER|Ingerir alimentos
 CORRER|Ir muy rápido a pie
 COSER|Unir telas con aguja e hilo
-CREAR|Hacer algo nuevo
+CREAR|Hacer algo nuevo|2
 DORMIR|Descansar con los ojos cerrados
 ESCRIBIR|Poner palabras en un papel
 ESTUDIAR|Prepararse para un examen
@@ -1055,10 +1128,10 @@ SENTIR|Experimentar una emoción
 VIVIR|Estar con vida
 REMAR|Mover un bote con remos
 ANCHO|Lo contrario de angosto
-BELLO|Hermoso
+BELLO|Hermoso|2
 BUENO|Lo contrario de malo
 BARATO|Que cuesta poco
-CLARO|Con mucha luz; también obvio
+CLARO|Con mucha luz; también obvio|2
 CORTO|Lo contrario de largo
 BLANDO|Lo contrario de duro
 FACIL|Que no cuesta esfuerzo
@@ -1080,7 +1153,7 @@ ALEGRE|Contento, divertido
 CALVO|Sin pelo
 CIEGO|Que no ve
 SORDO|Que no oye
-AGRIO|Ácido
+AGRIO|Ácido|2
 AMARGO|Sabor del café sin azúcar
 SALADO|Con mucha sal
 TIBIO|Ni frío ni caliente
@@ -1089,26 +1162,26 @@ PESADO|Que pesa mucho
 LIVIANO|Que pesa poco
 REDONDO|Con forma de círculo
 ENFERMO|Que no tiene salud
-JUSTO|Equitativo
-LISTO|Preparado; también inteligente
-ROSARIO|Ciudad donde Belgrano izó por primera vez la bandera
-CORDOBA|Provincia conocida como La Docta
+JUSTO|Equitativo|2
+LISTO|Preparado; también inteligente|2
+ROSARIO|Ciudad donde Belgrano izó por primera vez la bandera|2
+CORDOBA|Provincia conocida como La Docta|2
 MENDOZA|Provincia del buen vino
-SALTA|Provincia del norte apodada la Linda
-JUJUY|Provincia de la Quebrada de Humahuaca
-TUCUMAN|Provincia donde se declaró la Independencia
+SALTA|Provincia del norte apodada la Linda|2
+JUJUY|Provincia de la Quebrada de Humahuaca|2
+TUCUMAN|Provincia donde se declaró la Independencia|2
 BARILOCHE|Ciudad del chocolate, junto al Nahuel Huapi
 USHUAIA|Ciudad del fin del mundo
 PATAGONIA|Región del sur argentino
-CHACO|Provincia del noreste argentino
-MISIONES|Provincia de las Cataratas del Iguazú
+CHACO|Provincia del noreste argentino|2
+MISIONES|Provincia de las Cataratas del Iguazú|2
 IGUAZU|Cataratas famosas del norte argentino
-PARANA|Río y ciudad entrerriana
+PARANA|Río y ciudad entrerriana|2
 URUGUAY|País vecino; también un río
 CHILE|País al otro lado de la cordillera
 BRASIL|El país más grande de Sudamérica
-BOLIVIA|País con capital en Sucre
-PARAGUAY|País con capital en Asunción
+BOLIVIA|País con capital en Sucre|2
+PARAGUAY|País con capital en Asunción|2
 MEXICO|País de los mariachis
 ESPAÑA|País de Madrid
 FRANCIA|País de la Torre Eiffel
@@ -1120,40 +1193,40 @@ CHINA|País de la Gran Muralla
 INDIA|País del Taj Mahal
 RUSIA|El país más extenso del mundo
 EGIPTO|País de las pirámides de Giza
-GRECIA|Cuna de la democracia
-CANADA|País de la hoja de arce
+GRECIA|Cuna de la democracia|2
+CANADA|País de la hoja de arce|2
 PARIS|Capital de Francia
 MADRID|Capital de España
 LONDRES|Capital del Reino Unido
 BERLIN|Capital de Alemania
 TOKIO|Capital de Japón
-QUITO|Capital de Ecuador
-CARACAS|Capital de Venezuela
-BOGOTA|Capital de Colombia
+QUITO|Capital de Ecuador|2
+CARACAS|Capital de Venezuela|2
+BOGOTA|Capital de Colombia|2
 SANTIAGO|Capital de Chile
 ASUNCION|Capital de Paraguay
 MONTEVIDEO|Capital de Uruguay
-LISBOA|Capital de Portugal
-ATENAS|Capital de Grecia
-MOSCU|Capital de Rusia
+LISBOA|Capital de Portugal|2
+ATENAS|Capital de Grecia|2
+MOSCU|Capital de Rusia|2
 EUROPA|Continente de Francia y Alemania
 AFRICA|Continente de Egipto y Kenia
 AMERICA|Continente de Argentina
-AMAZONAS|El río más caudaloso del mundo
-ACONCAGUA|El cerro más alto de América
-RECOLETA|Barrio porteño con un famoso cementerio
-PALERMO|Barrio porteño de los bosques
+AMAZONAS|El río más caudaloso del mundo|2
+ACONCAGUA|El cerro más alto de América|2
+RECOLETA|Barrio porteño con un famoso cementerio|2
+PALERMO|Barrio porteño de los bosques|2
 OBELISCO|Monumento de la avenida 9 de Julio
-CAMINITO|Calle museo de La Boca
+CAMINITO|Calle museo de La Boca|2
 GAUCHO|Hombre de campo de la pampa
-CRIOLLO|Nacido en América de padres europeos
-MALBEC|Uva insignia del vino argentino
+CRIOLLO|Nacido en América de padres europeos|2
+MALBEC|Uva insignia del vino argentino|2
 ALFAJOR|Golosina de dos tapas con dulce de leche
 CHORIPAN|Sándwich de chorizo
-FACTURA|Medialuna o vigilante, en la panadería
+FACTURA|Medialuna o vigilante, en la panadería|2
 MEDIALUNA|Factura con forma curva
 MILANESA|Carne empanada y frita
-PROVOLETA|Queso a la parrilla
+PROVOLETA|Queso a la parrilla|2
 CHIMICHURRI|Salsa para el asado
 COLECTIVO|Bondi
 SUBTE|Tren que va bajo tierra en Buenos Aires
@@ -1162,23 +1235,23 @@ TERMO|Mantiene caliente el agua del mate
 LABURO|Trabajo, en lunfardo
 GUITA|Plata, en lunfardo
 BIRRA|Cerveza, en lunfardo
-CHABON|Tipo, muchacho, en el habla porteña
-MANGO|Fruta tropical; también un peso, en lunfardo
+CHABON|Tipo, muchacho, en el habla porteña|2
+MANGO|Fruta tropical; también un peso, en lunfardo|2
 QUILOMBO|Lío, desorden, en lunfardo
-FIACA|Pereza, en lunfardo
+FIACA|Pereza, en lunfardo|2
 BONDI|Colectivo, en lunfardo
-MORFI|Comida, en lunfardo
+MORFI|Comida, en lunfardo|2
 FERNET|Bebida amarga que se toma con cola
-MILONGA|Baile y lugar donde se baila tango
-BANDONEON|Instrumento típico del tango
-CANDOMBE|Ritmo afro rioplatense
-CUARTETO|Ritmo popular cordobés
-CHACARERA|Danza folclórica argentina
-ZAMBA|Danza folclórica que se baila con pañuelo
-PAYADOR|Cantor que improvisa con guitarra
+MILONGA|Baile y lugar donde se baila tango|2
+BANDONEON|Instrumento típico del tango|2
+CANDOMBE|Ritmo afro rioplatense|3
+CUARTETO|Ritmo popular cordobés|2
+CHACARERA|Danza folclórica argentina|2
+ZAMBA|Danza folclórica que se baila con pañuelo|2
+PAYADOR|Cantor que improvisa con guitarra|3
 MARADONA|Autor de la Mano de Dios
 MESSI|Capitán campeón del mundo en 2022
-RIVER|Club de Núñez
+RIVER|Club de Núñez|2
 ABEJA|Insecto que hace miel
 ARAÑA|Teje su tela
 HORMIGA|Insecto trabajador que vive en colonias
@@ -1193,9 +1266,9 @@ JAGUAR|Felino americano manchado
 CONDOR|Ave gigante de los Andes
 CARPINCHO|El roedor más grande del mundo
 ÑANDU|Ave corredora de la pampa
-GUANACO|Camélido patagónico
-VICUÑA|Camélido andino de lana fina
-HORNERO|Ave nacional argentina que hace nidos de barro
+GUANACO|Camélido patagónico|2
+VICUÑA|Camélido andino de lana fina|2
+HORNERO|Ave nacional argentina que hace nidos de barro|2
 TIBURON|Pez de dientes afilados
 CANGREJO|Camina de costado
 CARACOL|Lleva su casa a cuestas
@@ -1205,33 +1278,33 @@ PANTERA|Felino negro
 GORILA|El primate más grande
 KOALA|Marsupial que come eucalipto
 LEOPARDO|Felino de manchas
-NUTRIA|Roedor de río
+NUTRIA|Roedor de río|2
 GALLINA|Pone huevos
 CISNE|Ave blanca de cuello largo
-TUCAN|Ave de pico grande y colorido
+TUCAN|Ave de pico grande y colorido|2
 FLAMENCO|Ave rosada que se para en una pata
 MEDUSA|Animal marino gelatinoso
 SALMON|Pez de carne rosada
 TRUCHA|Pez de río patagónico
 SARDINA|Pez chico que viene en lata
-PERDIZ|Ave de campo
+PERDIZ|Ave de campo|2
 VIBORA|Serpiente venenosa
 IGUANA|Reptil verde
 LIEBRE|Pariente del conejo, más veloz
 CIERVO|Animal con cornamenta
-YACARE|Caimán del Litoral
+YACARE|Caimán del Litoral|3
 YEGUA|Hembra del caballo
-POTRO|Caballo joven
+POTRO|Caballo joven|2
 CORDERO|Cría de la oveja
 TERNERO|Cría de la vaca
-LECHON|Cerdito que se hace al asador
+LECHON|Cerdito que se hace al asador|2
 ACEITE|Líquido para freír
 ACEITUNA|Fruto del olivo
 AZUCAR|Endulza el café
 SALCHICHA|Va en el pancho
 PANCHO|Salchicha en pan
 TOSTADA|Pan dorado
-GALLETA|Bizcocho seco
+GALLETA|Bizcocho seco|2
 GALLETITA|Se come con el mate
 BIZCOCHUELO|Torta esponjosa
 CHOCOLATE|Se hace con cacao
@@ -1241,11 +1314,11 @@ YOGUR|Lácteo fermentado
 SANDWICH|Dos panes con relleno
 HAMBURGUESA|Carne picada en pan
 GUISO|Comida de olla
-LOCRO|Guiso patrio de maíz
-HUMITA|Pasta de choclo envuelta en chala
+LOCRO|Guiso patrio de maíz|2
+HUMITA|Pasta de choclo envuelta en chala|3
 CHOCLO|Mazorca de maíz
-POMELO|Cítrico amargo
-DURAZNO|Fruta de piel aterciopelada
+POMELO|Cítrico amargo|2
+DURAZNO|Fruta de piel aterciopelada|2
 CIRUELA|Fruta morada
 CEREZA|Fruta roja chiquita con carozo
 ANANA|Fruta tropical con corona
@@ -1255,28 +1328,28 @@ ZAPALLO|Hortaliza grande y naranja
 BERENJENA|Hortaliza violeta
 ESPINACA|Verdura de Popeye
 REPOLLO|Verdura de hojas apretadas
-MORRON|Pimiento
-PEREJIL|Hierba picada para condimentar
+MORRON|Pimiento|2
+PEREJIL|Hierba picada para condimentar|2
 OREGANO|Condimento de la pizza
 PIMIENTA|Condimento que hace estornudar
 SALAME|Fiambre de la picada
-MORTADELA|Fiambre de cerdo con trocitos de grasa
+MORTADELA|Fiambre de cerdo con trocitos de grasa|2
 PICADA|Fiambres y quesos para compartir
 MOSTAZA|Aderezo amarillo
 VINAGRE|Condimento ácido de la ensalada
-AVENA|Cereal de los copos del desayuno
-CEBADA|Cereal de la cerveza
-POROTO|Legumbre, frijol
+AVENA|Cereal de los copos del desayuno|2
+CEBADA|Cereal de la cerveza|2
+POROTO|Legumbre, frijol|2
 GARBANZO|Legumbre del hummus
-ALMENDRA|Fruto seco ovalado
+ALMENDRA|Fruto seco ovalado|2
 MERMELADA|Dulce de fruta para la tostada
 ALMOHADA|Apoyo para la cabeza al dormir
 ALFOMBRA|Cubre el piso
 ARMARIO|Mueble para guardar ropa
 BALCON|Se asoma a la calle
-BAÑERA|Tina
+BAÑERA|Tina|2
 BOTELLA|Envase de vidrio o plástico
-CAJON|Parte deslizable de un mueble
+CAJON|Parte deslizable de un mueble|2
 CARTERA|Bolso de mano
 CEPILLO|Sirve para lavarse los dientes
 COLCHON|Parte blanda de la cama
@@ -1285,8 +1358,8 @@ CUADRO|Pintura enmarcada
 CUCHARA|Cubierto para la sopa
 CUCHILLO|Cubierto para cortar
 ESCOBA|Sirve para barrer
-ESTANTE|Tabla para poner libros
-FRAZADA|Manta de abrigo
+ESTANTE|Tabla para poner libros|2
+FRAZADA|Manta de abrigo|2
 HELADERA|Mantiene fríos los alimentos
 LAVARROPAS|Electrodoméstico para la ropa
 LINTERNA|Luz portátil
@@ -1300,24 +1373,24 @@ SARTEN|Para freír
 SILLON|Asiento cómodo con brazos
 TELEVISOR|Aparato para ver programas
 TORNILLO|Se ajusta con destornillador
-VELADOR|Lámpara de mesa de luz
+VELADOR|Lámpara de mesa de luz|2
 BALDE|Recipiente para cargar agua
 ANTEOJOS|Ayudan a ver mejor
 BILLETERA|Para guardar la plata
 CUADERNO|Libreta para tomar apuntes
 PIZARRON|Donde escribe la maestra
-COMPAS|Instrumento para trazar círculos
+COMPAS|Instrumento para trazar círculos|2
 LIBRETA|Cuaderno pequeño
 CARPETA|Guarda hojas sueltas
-ESTAMPILLA|Sello postal
+ESTAMPILLA|Sello postal|2
 POSTAL|Tarjeta de viaje
-BIROME|Lapicera, en Argentina
+BIROME|Lapicera, en Argentina|2
 ABANICO|Sirve para darse aire
 ANILLO|Se pone en el dedo
 COLLAR|Se pone en el cuello
 PULSERA|Se pone en la muñeca
 BOTON|Abrocha la camisa
-CIERRE|Cremallera
+CIERRE|Cremallera|2
 CORBATA|Se anuda en el cuello de la camisa
 CAMISA|Prenda con cuello y botones
 PANTALON|Prenda que cubre las piernas
@@ -1329,25 +1402,25 @@ OJOTA|Calzado de playa
 GORRO|Abriga la cabeza
 GORRA|Prenda con visera para la cabeza
 PESTAÑA|Pelo del borde del párpado
-MEJILLA|Cachete
+MEJILLA|Cachete|2
 FRENTE|Parte de la cara sobre las cejas
 BARBA|Pelo de la cara
 BIGOTE|Pelo sobre el labio
-MENTON|Parte de abajo de la cara
+MENTON|Parte de abajo de la cara|2
 CINTURA|Parte media del cuerpo
-CADERA|Hueso de la pelvis
+CADERA|Hueso de la pelvis|2
 TOBILLO|Une el pie con la pierna
 TALON|Parte trasera del pie
 MUÑECA|Une la mano con el brazo; también un juguete
 PULMON|Órgano para respirar
 CEREBRO|Órgano del pensamiento
-HIGADO|Órgano que fabrica la bilis
+HIGADO|Órgano que fabrica la bilis|2
 RIÑON|Órgano que produce la orina
 ESTOMAGO|Donde se digiere la comida
 MUSCULO|Se fortalece en el gimnasio
-COSTILLA|Hueso del tórax
-CRANEO|Hueso de la cabeza
-GARGANTA|Duele con la angina
+COSTILLA|Hueso del tórax|2
+CRANEO|Hueso de la cabeza|2
+GARGANTA|Duele con la angina|2
 PULGAR|Dedo gordo
 ABOGADO|Defiende en un juicio
 ACTOR|Trabaja en el cine o el teatro
@@ -1369,7 +1442,7 @@ PILOTO|Maneja un avión
 PINTOR|Pinta cuadros o paredes
 POLICIA|Cuida el orden público
 PROFESOR|Enseña en la escuela o la facultad
-SASTRE|Hace trajes a medida
+SASTRE|Hace trajes a medida|2
 SOLDADO|Integra un ejército
 VETERINARIO|Médico de animales
 CARPINTERO|Trabaja la madera
@@ -1386,7 +1459,7 @@ COMPUTADORA|Máquina para trabajar y navegar
 ARCHIVO|Documento guardado
 CLAVE|Contraseña
 USUARIO|Persona que usa un sistema
-PIXEL|Punto de una imagen digital
+PIXEL|Punto de una imagen digital|2
 VIRUS|Infecta una computadora o un cuerpo
 VIDEO|Grabación de imágenes en movimiento
 EMOJI|Carita del chat
@@ -1394,16 +1467,16 @@ BATERIA|Instrumento de tambores y platillos; también pila
 FLAUTA|Instrumento de viento
 TROMPETA|Instrumento de metal de viento
 VIOLIN|Instrumento de cuerdas con arco
-CHARANGO|Guitarra andina chiquita
-QUENA|Flauta andina
-BOMBO|Tambor del folclore
+CHARANGO|Guitarra andina chiquita|2
+QUENA|Flauta andina|3
+BOMBO|Tambor del folclore|2
 RITMO|Pulso de la música
-OPERA|Teatro cantado
+OPERA|Teatro cantado|2
 DISCO|Álbum musical
 CONCIERTO|Show de música en vivo
 NOVELA|Libro con una historia larga
 CUENTO|Historia corta
-FABULA|Cuento con moraleja
+FABULA|Cuento con moraleja|2
 HEROE|Protagonista valiente
 VILLANO|El malo de la historia
 PRINCESA|Hija del rey
@@ -1416,7 +1489,7 @@ SIRENA|Mitad mujer, mitad pez
 UNICORNIO|Caballo con un cuerno
 CIRCO|Espectáculo con payasos
 PAYASO|Hace reír en el circo
-TITERE|Muñeco que se mueve con la mano
+TITERE|Muñeco que se mueve con la mano|2
 ARQUERO|Defiende el arco
 DELANTERO|Jugador que ataca
 PENAL|Tiro desde los once metros
@@ -1425,10 +1498,10 @@ ARBITRO|Juez del partido
 ESTADIO|Cancha grande con tribunas
 CANCHA|Campo de juego
 HINCHA|Fanático de un club
-CLASICO|Partido entre rivales históricos
+CLASICO|Partido entre rivales históricos|2
 MUNDIAL|Copa del mundo de fútbol
-RUGBY|Deporte de los Pumas
-HOCKEY|Deporte de las Leonas
+RUGBY|Deporte de los Pumas|2
+HOCKEY|Deporte de las Leonas|2
 BOXEO|Deporte de guantes y ring
 NATACION|Deporte en la pileta
 PILETA|Piscina
@@ -1436,88 +1509,88 @@ RAQUETA|Se usa en el tenis
 MEDALLA|Premio olímpico
 MARATON|Carrera de 42 kilómetros
 TRUCO|Juego de cartas argentino; también engaño
-ENVIDO|Canto del truco
+ENVIDO|Canto del truco|2
 POKER|Juego de cartas con fichas
 DOMINO|Juego de fichas con puntos
-DAMAS|Juego de tablero de fichas que comen en diagonal
+DAMAS|Juego de tablero de fichas que comen en diagonal|2
 BINGO|Juego de cartones y números
 LOTERIA|Juego de azar con billetes numerados
 RULETA|Juego de casino que gira
 TABLERO|Superficie del ajedrez
-ALFIL|Pieza de ajedrez que va en diagonal
+ALFIL|Pieza de ajedrez que va en diagonal|2
 PEON|La pieza más chica del ajedrez
-JAQUE|Amenaza al rey en el ajedrez
-ATOMO|Partícula de la materia
-ENERGIA|Capacidad de hacer trabajo
+JAQUE|Amenaza al rey en el ajedrez|2
+ATOMO|Partícula de la materia|2
+ENERGIA|Capacidad de hacer trabajo|2
 FUERZA|La que tenés en los músculos
-CLIMA|Tiempo atmosférico de una región
-COMETA|Astro con cola; también barrilete
+CLIMA|Tiempo atmosférico de una región|2
+COMETA|Astro con cola; también barrilete|2
 GALAXIA|Conjunto enorme de estrellas
 ECLIPSE|Cuando la Luna tapa al Sol
-ORBITA|Camino de un planeta alrededor del Sol
-JUPITER|El planeta más grande
+ORBITA|Camino de un planeta alrededor del Sol|2
+JUPITER|El planeta más grande|2
 SATURNO|Planeta de los anillos
-VENUS|El planeta más brillante del cielo
-MERCURIO|El planeta más cercano al Sol
-NEPTUNO|Planeta azul y lejano
-URANO|Séptimo planeta
+VENUS|El planeta más brillante del cielo|2
+MERCURIO|El planeta más cercano al Sol|2
+NEPTUNO|Planeta azul y lejano|2
+URANO|Séptimo planeta|3
 GRAVEDAD|Nos mantiene pegados al suelo
-OXIGENO|Gas que respiramos
-CARBONO|Elemento base de la vida
+OXIGENO|Gas que respiramos|2
+CARBONO|Elemento base de la vida|2
 ACIDO|Sabor del limón
 NIEBLA|Nube a ras del suelo
-ROCIO|Gotitas de la mañana en el pasto
-GRANIZO|Lluvia de hielo
+ROCIO|Gotitas de la mañana en el pasto|2
+GRANIZO|Lluvia de hielo|2
 ARCOIRIS|Arco de siete colores
-BRISA|Viento suave
+BRISA|Viento suave|2
 TORNADO|Remolino de viento destructor
-SISMO|Terremoto
+SISMO|Terremoto|2
 CUEVA|Hueco en la roca
 COSTA|Orilla del mar
-BAHIA|Entrada del mar en la costa
-GOLFO|Gran entrada del mar
+BAHIA|Entrada del mar en la costa|2
+GOLFO|Gran entrada del mar|2
 COLINA|Elevación chica del terreno
-CERRO|Monte
-GLACIAR|Río de hielo, como el Perito Moreno
+CERRO|Monte|2
+GLACIAR|Río de hielo, como el Perito Moreno|2
 LAGUNA|Lago chico
 ARROYO|Río chico
 CASCADA|Caída de agua
 OASIS|Agua en el desierto
-PRADERA|Llanura de pasto
+PRADERA|Llanura de pasto|2
 TRONCO|Parte gruesa del árbol
-SAUCE|Árbol llorón
-CEIBO|Árbol de la flor nacional argentina
-JACARANDA|Árbol de flores violetas en Buenos Aires
+SAUCE|Árbol llorón|2
+CEIBO|Árbol de la flor nacional argentina|2
+JACARANDA|Árbol de flores violetas en Buenos Aires|2
 CACTUS|Planta con espinas del desierto
 MARGARITA|Flor blanca de centro amarillo
 GIRASOL|Flor que sigue al sol
 TULIPAN|Flor típica de Holanda
-CLAVEL|Flor que se lleva en el ojal
-ORQUIDEA|Flor exótica y elegante
+CLAVEL|Flor que se lleva en el ojal|2
+ORQUIDEA|Flor exótica y elegante|2
 JAZMIN|Flor blanca muy perfumada
-HELECHO|Planta sin flores de hojas grandes
-MUSGO|Planta verde que crece en piedras húmedas
+HELECHO|Planta sin flores de hojas grandes|2
+MUSGO|Planta verde que crece en piedras húmedas|2
 AMISTAD|Relación entre amigos
-APODO|Sobrenombre
+APODO|Sobrenombre|2
 AVENTURA|Experiencia emocionante
 AYUDA|Auxilio
 BANDERA|Celeste y blanca, la argentina
 BANCO|Asiento de plaza; también entidad financiera
 BASURA|Desechos
 BATALLA|Combate
-BRUJULA|Indica el norte
+BRUJULA|Indica el norte|2
 CAMINO|Vía para ir de un lugar a otro
-CAMBIO|Vuelto; también transformación
-CARRERA|Competencia de velocidad; también estudios universitarios
+CAMBIO|Vuelto; también transformación|2
+CARRERA|Competencia de velocidad; también estudios universitarios|2
 CASTIGO|Pena por portarse mal
 CIENCIA|Conocimiento basado en experimentos
-CLASE|Lección
+CLASE|Lección|2
 COLEGIO|Escuela
 COMIDA|Lo que se come
-CONSEJO|Recomendación
+CONSEJO|Recomendación|2
 CUENTA|Lo que hay que pagar en el restaurante
 CULPA|Responsabilidad de un error
-DESTINO|Lugar al que se va; también suerte
+DESTINO|Lugar al que se va; también suerte|2
 DIBUJO|Imagen hecha con lápiz
 DINERO|Plata
 DOLOR|Lo que se siente al golpearse
@@ -1525,16 +1598,16 @@ ENEMIGO|Lo contrario de amigo
 ERROR|Equivocación
 EXAMEN|Prueba escolar
 EXITO|Resultado feliz
-FORMA|Figura exterior
-FRASE|Conjunto de palabras con sentido
+FORMA|Figura exterior|2
+FRASE|Conjunto de palabras con sentido|2
 FUTURO|Lo que vendrá
 GUERRA|Conflicto armado
 HISTORIA|Estudio del pasado
 HUMOR|Gracia, comicidad
 IDIOMA|Lengua de un país
-IMAGEN|Figura, representación
-INVENTO|Creación nueva
-LECCION|Clase
+IMAGEN|Figura, representación|2
+INVENTO|Creación nueva|2
+LECCION|Clase|2
 LIBERTAD|Lo contrario de esclavitud
 LLEGADA|Fin de un viaje
 LUCHA|Combate
@@ -1544,19 +1617,19 @@ MENSAJE|Comunicación escrita
 MENTIRA|Lo contrario de verdad
 MIRADA|Acción de mirar
 MISTERIO|Algo que no se puede explicar
-MOMENTO|Instante
+MOMENTO|Instante|2
 MUERTE|Fin de la vida
-NACION|País
+NACION|País|2
 NOMBRE|Cómo se llama alguien
 NOTICIA|Información nueva
-OBJETO|Cosa
+OBJETO|Cosa|2
 OLVIDO|Pérdida de la memoria
 ORDEN|Lo contrario de caos
 PALABRA|Lo que va en este crucigrama
 PARTIDO|Encuentro deportivo; también agrupación política
 PASADO|Lo que ya ocurrió
 PASEO|Salida para caminar
-PEDIDO|Encargo
+PEDIDO|Encargo|2
 PELIGRO|Riesgo
 PELICULA|Se ve en el cine
 PERSONA|Ser humano
@@ -1567,539 +1640,539 @@ RESPUESTA|Lo que contesta una pregunta
 RIESGO|Peligro
 SALIDA|Por donde se sale
 SECRETO|Algo que no se cuenta
-SEÑAL|Aviso, indicio
+SEÑAL|Aviso, indicio|2
 SORPRESA|Algo inesperado
 SUERTE|Azar favorable
 TAREA|Deber escolar
 TRABAJO|Empleo
 TRAMPA|Engaño; también artefacto para cazar
 VACACIONES|Descanso del trabajo o la escuela
-VALOR|Coraje; también precio
-VENTAJA|Superioridad
-VERSO|Línea de un poema
+VALOR|Coraje; también precio|2
+VENTAJA|Superioridad|2
+VERSO|Línea de un poema|2
 VICTORIA|Triunfo
 VISITA|Persona que llega de afuera
 VUELO|Viaje en avión
 VUELTA|Regreso
-ATLAS|Libro de mapas
+ATLAS|Libro de mapas|2
 ESPIA|Agente secreto
-FARSA|Engaño
-GRADO|Unidad de temperatura
-ICONO|Imagen que representa algo
+FARSA|Engaño|3
+GRADO|Unidad de temperatura|2
+ICONO|Imagen que representa algo|2
 KARATE|Arte marcial de golpes
 MOTOR|Hace andar un vehículo
-NIVEL|Altura, grado
-OPALO|Piedra preciosa iridiscente
-OSADO|Atrevido
-PACTO|Acuerdo
+NIVEL|Altura, grado|2
+OPALO|Piedra preciosa iridiscente|3
+OSADO|Atrevido|3
+PACTO|Acuerdo|2
 RADAR|Detecta aviones
 SUSHI|Comida japonesa de arroz y pescado
-TALCO|Polvo blanco para el cuerpo
-TAPIR|Mamífero de trompa corta
+TALCO|Polvo blanco para el cuerpo|2
+TAPIR|Mamífero de trompa corta|3
 TEXTO|Conjunto de palabras escritas
 TRONO|Asiento del rey
-UNIDAD|Cantidad tomada como uno
-UTIL|Que sirve
+UNIDAD|Cantidad tomada como uno|2
+UTIL|Que sirve|2
 DOLAR|Moneda de Estados Unidos
-LIBRA|Moneda británica; también signo del zodíaco
-ARIES|Primer signo del zodíaco
-TAURO|Signo del toro
-VIRGO|Signo zodiacal de septiembre
-PISCIS|Signo de los peces
-ACUARIO|Signo del aguatero; también pecera
+LIBRA|Moneda británica; también signo del zodíaco|2
+ARIES|Primer signo del zodíaco|2
+TAURO|Signo del toro|2
+VIRGO|Signo zodiacal de septiembre|2
+PISCIS|Signo de los peces|2
+ACUARIO|Signo del aguatero; también pecera|2
 VIOLETA|Color de las berenjenas
 CELESTE|Color de la bandera argentina
 MARRON|Color del chocolate
 DORADO|Color del oro
 PLATEADO|Color de la plata
-TURQUESA|Azul verdoso
-BORDO|Color del vino tinto
+TURQUESA|Azul verdoso|2
+BORDO|Color del vino tinto|2
 CUATRO|Tres más uno
 CINCO|Dedos de una mano
 SIETE|Días de la semana
 NUEVE|Uno menos que diez
-QUINCE|Edad de la gran fiesta
-VEINTE|Dos decenas
+QUINCE|Edad de la gran fiesta|2
+VEINTE|Dos decenas|2
 DOCENA|Doce unidades
 MITAD|Una de dos partes iguales
 DOBLE|Dos veces
-TRIPLE|Tres veces
-GIN|Bebida alcohólica con enebro
-HIT|Gran éxito musical
-ION|Átomo con carga eléctrica
-KIT|Conjunto de herramientas o piezas
-MUS|Juego de naipes español
-OLE|Grito de aliento en la plaza de toros
-ONU|Organización de las Naciones Unidas, en siglas
-PUB|Bar al estilo inglés
+TRIPLE|Tres veces|2
+GIN|Bebida alcohólica con enebro|2
+HIT|Gran éxito musical|2
+ION|Átomo con carga eléctrica|3
+KIT|Conjunto de herramientas o piezas|2
+MUS|Juego de naipes español|3
+OLE|Grito de aliento en la plaza de toros|2
+ONU|Organización de las Naciones Unidas, en siglas|2
+PUB|Bar al estilo inglés|2
 RAP|Música de rimas habladas
-TIC|Movimiento involuntario repetido
+TIC|Movimiento involuntario repetido|2
 VOS|Pronombre de segunda persona en el Río de la Plata
-YAK|Bóvido peludo del Tíbet
-AHI|En ese lugar
-ALLI|En aquel lugar
-PRO|A favor de
-TEZ|Piel de la cara
-USO|Empleo, utilización
-SON|Ritmo cubano; también ruido agradable
-UNA|Artículo indefinido femenino
-NOS|Pronombre de primera persona plural
-CON|Preposición de compañía
-SIN|Preposición de carencia
-POR|Signo de la multiplicación, leído
-PARA|Preposición de finalidad
-AUN|Todavía
-MUY|Bastante, mucho
-PAR|Número divisible por dos
-ADN|Molécula de la herencia, en siglas
-IVA|Impuesto al valor agregado, en siglas
+YAK|Bóvido peludo del Tíbet|3
+AHI|En ese lugar|2
+ALLI|En aquel lugar|2
+PRO|A favor de|3
+TEZ|Piel de la cara|3
+USO|Empleo, utilización|2
+SON|Ritmo cubano; también ruido agradable|3
+UNA|Artículo indefinido femenino|2
+NOS|Pronombre de primera persona plural|2
+CON|Preposición de compañía|2
+SIN|Preposición de carencia|2
+POR|Signo de la multiplicación, leído|2
+PARA|Preposición de finalidad|2
+AUN|Todavía|2
+MUY|Bastante, mucho|2
+PAR|Número divisible por dos|2
+ADN|Molécula de la herencia, en siglas|2
+IVA|Impuesto al valor agregado, en siglas|2
 DNI|Documento argentino, en siglas
 AFA|Asociación del Fútbol Argentino, en siglas
-UBA|Universidad porteña, en siglas
-PBI|Producto bruto interno, en siglas
+UBA|Universidad porteña, en siglas|2
+PBI|Producto bruto interno, en siglas|2
 OVNI|Objeto volador no identificado
 NASA|Agencia espacial estadounidense
 FIFA|Organiza el Mundial de fútbol
-USB|Conector de la compu, en siglas
-PDF|Formato de documento, en siglas
-GPS|Sistema de ubicación satelital, en siglas
-LED|Luz de bajo consumo, en siglas
-DVD|Disco de películas, en siglas
-SMS|Mensaje de texto, en siglas
-VIP|Persona muy importante, en siglas
-ARCA|Barco de Noé
-ASTA|Palo de la bandera
+USB|Conector de la compu, en siglas|2
+PDF|Formato de documento, en siglas|2
+GPS|Sistema de ubicación satelital, en siglas|2
+LED|Luz de bajo consumo, en siglas|2
+DVD|Disco de películas, en siglas|2
+SMS|Mensaje de texto, en siglas|2
+VIP|Persona muy importante, en siglas|2
+ARCA|Barco de Noé|2
+ASTA|Palo de la bandera|2
 ATUN|Pescado que viene en lata
-BABA|Saliva espesa
+BABA|Saliva espesa|2
 BAÑO|Lugar de la ducha
-BATA|Prenda que se usa al salir de la ducha
-BECA|Ayuda económica para estudiar
+BATA|Prenda que se usa al salir de la ducha|2
+BECA|Ayuda económica para estudiar|2
 BODA|Casamiento
-BOYA|Flota en el mar como señal
-BUDA|Fundador del budismo
-CALA|Bahía pequeña
-CAÑA|Tallo del bambú; también de pescar
-CAVA|Vino espumoso español
+BOYA|Flota en el mar como señal|2
+BUDA|Fundador del budismo|2
+CALA|Bahía pequeña|3
+CAÑA|Tallo del bambú; también de pescar|2
+CAVA|Vino espumoso español|3
 CLIP|Sujeta papeles
 COMA|Signo de puntuación
 CUNA|Cama del bebé
-CURA|Sacerdote; también remedio
-DAGA|Puñal
-FAJA|Banda que ciñe la cintura
-FETA|Rebanada de fiambre
+CURA|Sacerdote; también remedio|2
+DAGA|Puñal|2
+FAJA|Banda que ciñe la cintura|3
+FETA|Rebanada de fiambre|2
 FICHA|Pieza de un juego de mesa
-FIEL|Leal
-FOSA|Hoyo para enterrar
-GIRO|Vuelta
-GRUA|Máquina para levantar peso
-GUIA|Persona que muestra el camino
-HALO|Aureola
-HOYO|Agujero en la tierra
-HUSO|El horario divide el planeta en franjas
-JOTA|Letra J; también baile aragonés
+FIEL|Leal|2
+FOSA|Hoyo para enterrar|2
+GIRO|Vuelta|2
+GRUA|Máquina para levantar peso|2
+GUIA|Persona que muestra el camino|2
+HALO|Aureola|3
+HOYO|Agujero en la tierra|2
+HUSO|El horario divide el planeta en franjas|3
+JOTA|Letra J; también baile aragonés|2
 KILO|Mil gramos
-LAMA|Monje budista del Tíbet
-LAZO|Moño de cinta
+LAMA|Monje budista del Tíbet|3
+LAZO|Moño de cinta|2
 LEÑA|Madera para el fuego
-LIRA|Instrumento de cuerdas antiguo
-LONA|Tela fuerte de las carpas
-LOTE|Terreno
-LUCA|Mil pesos, en lunfardo
-LUTO|Duelo por una muerte
-MAZO|Conjunto de cartas; también martillo de madera
-MECHA|Hilo de la vela
+LIRA|Instrumento de cuerdas antiguo|3
+LONA|Tela fuerte de las carpas|2
+LOTE|Terreno|2
+LUCA|Mil pesos, en lunfardo|2
+LUTO|Duelo por una muerte|2
+MAZO|Conjunto de cartas; también martillo de madera|2
+MECHA|Hilo de la vela|2
 MENU|Lista de platos
-MORA|Fruto negro del bosque
-MOÑO|Lazo en el pelo
-MUSA|Inspira al artista
+MORA|Fruto negro del bosque|2
+MOÑO|Lazo en el pelo|2
+MUSA|Inspira al artista|3
 NENA|Chica pequeña
-OLMO|Árbol de hojas aserradas
-OTRO|Distinto, diferente
-PAJA|Tallo seco del trigo
+OLMO|Árbol de hojas aserradas|3
+OTRO|Distinto, diferente|2
+PAJA|Tallo seco del trigo|2
 PALO|Trozo de madera largo
-PANA|Tela aterciopelada
-PECA|Manchita en la piel
-PICO|Boca de un ave; también cumbre
-POCO|Escaso
-PUÑO|Mano cerrada
-PURO|Cigarro grande; también sin mezcla
+PANA|Tela aterciopelada|3
+PECA|Manchita en la piel|2
+PICO|Boca de un ave; también cumbre|2
+POCO|Escaso|2
+PUÑO|Mano cerrada|2
+PURO|Cigarro grande; también sin mezcla|2
 REMO|Sirve para mover un bote
-RIZO|Rulo
-ROBO|Hurto
-RODEO|Fiesta de jinetes y ganado
+RIZO|Rulo|2
+ROBO|Hurto|2
+RODEO|Fiesta de jinetes y ganado|2
 ROPA|Prendas de vestir
-RUDA|Planta que se toma en agosto con caña
+RUDA|Planta que se toma en agosto con caña|3
 SALA|Habitación de la casa para recibir
-SEDE|Lugar central de una organización
-SETA|Hongo comestible
+SEDE|Lugar central de una organización|2
+SETA|Hongo comestible|3
 SODA|Agua con gas
-SOLO|Sin compañía
-SUMO|Lucha japonesa de gigantes
-TIRO|Disparo
-TONO|Altura de un sonido
-TOPO|Mamífero que cava túneles
-TRAMO|Parte de un camino
-TRIO|Grupo de tres
-VAGO|Perezoso
-VALE|Bono, cupón
-VELO|Tela que cubre el rostro de la novia
+SOLO|Sin compañía|2
+SUMO|Lucha japonesa de gigantes|2
+TIRO|Disparo|2
+TONO|Altura de un sonido|2
+TOPO|Mamífero que cava túneles|2
+TRAMO|Parte de un camino|2
+TRIO|Grupo de tres|2
+VAGO|Perezoso|2
+VALE|Bono, cupón|2
+VELO|Tela que cubre el rostro de la novia|2
 YOYO|Juguete que sube y baja por un hilo
-ZETA|Última letra del abecedario
-ALBA|Primera luz del día
-ALDEA|Pueblo pequeño
-ALGO|Una cosa indeterminada
+ZETA|Última letra del abecedario|2
+ALBA|Primera luz del día|2
+ALDEA|Pueblo pequeño|2
+ALGO|Una cosa indeterminada|2
 ANCLA|Fija el barco al fondo
-ANTE|Frente a
-ARIA|Pieza para una voz en la ópera
-AROMA|Olor agradable
-ASCO|Repugnancia
-ASNO|Burro
-ATRAS|Detrás
+ANTE|Frente a|3
+ARIA|Pieza para una voz en la ópera|3
+AROMA|Olor agradable|2
+ASCO|Repugnancia|2
+ASNO|Burro|2
+ATRAS|Detrás|2
 AYER|El día anterior a hoy
-BALA|Proyectil
-BAUL|Arcón para guardar cosas
-BOINA|Gorra del gaucho
-BOMBA|Explosivo
-BRASA|Carbón encendido
-CAOS|Desorden total
-CAPA|Abrigo sin mangas; también estrato
+BALA|Proyectil|2
+BAUL|Arcón para guardar cosas|2
+BOINA|Gorra del gaucho|2
+BOMBA|Explosivo|2
+BRASA|Carbón encendido|2
+CAOS|Desorden total|2
+CAPA|Abrigo sin mangas; también estrato|2
 CASCO|Protege la cabeza
-CEBO|Carnada
-CERCO|Valla
-CHAL|Prenda para los hombros
-CHIP|Pieza electrónica diminuta
-CLAN|Grupo familiar
-COFRE|Caja de tesoros
-COLMO|El límite de lo tolerable
-CORAL|Esqueleto marino de colores
-CORTE|Herida hecha con filo; también tribunal
-COTO|Terreno de caza
-CUERO|Piel curtida
-CUPO|Lugar disponible
-DARDO|Flecha pequeña que se lanza a mano
-DIETA|Régimen de comidas
-DIQUE|Muro que contiene el agua
-DOGO|Raza de perro argentina
-DRAMA|Obra trágica
-DUELO|Combate entre dos; también tristeza por una muerte
-DUQUE|Título noble
-ENOJO|Bronca
-FALTA|Infracción en un partido
-FIBRA|Hilo de un tejido
-FILO|Borde cortante
+CEBO|Carnada|3
+CERCO|Valla|2
+CHAL|Prenda para los hombros|2
+CHIP|Pieza electrónica diminuta|2
+CLAN|Grupo familiar|2
+COFRE|Caja de tesoros|2
+COLMO|El límite de lo tolerable|2
+CORAL|Esqueleto marino de colores|2
+CORTE|Herida hecha con filo; también tribunal|2
+COTO|Terreno de caza|3
+CUERO|Piel curtida|2
+CUPO|Lugar disponible|2
+DARDO|Flecha pequeña que se lanza a mano|2
+DIETA|Régimen de comidas|2
+DIQUE|Muro que contiene el agua|2
+DOGO|Raza de perro argentina|3
+DRAMA|Obra trágica|2
+DUELO|Combate entre dos; también tristeza por una muerte|2
+DUQUE|Título noble|2
+ENOJO|Bronca|2
+FALTA|Infracción en un partido|2
+FIBRA|Hilo de un tejido|2
+FILO|Borde cortante|2
 FLECHA|Se dispara con arco
-FLOTA|Conjunto de barcos
-FUGA|Escape
-FUNDA|Cubre la almohada
-GAITA|Instrumento escocés de viento
-GASA|Tela para vendar
-GENIO|Persona muy inteligente; también sale de la lámpara
-GESTO|Movimiento de la cara o las manos
+FLOTA|Conjunto de barcos|2
+FUGA|Escape|2
+FUNDA|Cubre la almohada|2
+GAITA|Instrumento escocés de viento|2
+GASA|Tela para vendar|2
+GENIO|Persona muy inteligente; también sale de la lámpara|2
+GESTO|Movimiento de la cara o las manos|2
 GOLPE|Choque fuerte
-GRAMO|Milésima de kilo
-GRASA|Sebo
-GRIETA|Abertura; también división política
-GUIÑO|Cerrar un ojo con complicidad
+GRAMO|Milésima de kilo|2
+GRASA|Sebo|2
+GRIETA|Abertura; también división política|2
+GUIÑO|Cerrar un ojo con complicidad|2
 HAMACA|Red para descansar colgada
-HEBRA|Hilo
+HEBRA|Hilo|3
 HUELLA|Marca que deja el pie
-HUMANO|Persona
-IGLU|Casa de hielo
+HUMANO|Persona|2
+IGLU|Casa de hielo|2
 JARABE|Remedio dulce para la tos
-JINETE|Monta a caballo
-JUNCO|Planta de las orillas
-LANZA|Arma de asta larga
-LATIDO|Golpe del corazón
-LIMBO|Lugar indefinido
-LINCE|Felino de vista aguda
-LLANO|Plano
-LOMA|Colina pequeña
-LUNAR|Mancha en la piel
+JINETE|Monta a caballo|2
+JUNCO|Planta de las orillas|3
+LANZA|Arma de asta larga|2
+LATIDO|Golpe del corazón|2
+LIMBO|Lugar indefinido|3
+LINCE|Felino de vista aguda|2
+LLANO|Plano|2
+LOMA|Colina pequeña|2
+LUNAR|Mancha en la piel|2
 MACETA|Recipiente para plantas
-MARCA|Nombre de un producto
-MAREA|Sube y baja con la luna
-MENTA|Hierba refrescante
-MIRA|Parte del arma para apuntar
-MONJA|Religiosa
-MORSA|Mamífero marino con colmillos
-MOTIVO|Razón
-NAIPE|Carta de la baraja
-NOBLE|De la aristocracia
+MARCA|Nombre de un producto|2
+MAREA|Sube y baja con la luna|2
+MENTA|Hierba refrescante|2
+MIRA|Parte del arma para apuntar|3
+MONJA|Religiosa|2
+MORSA|Mamífero marino con colmillos|2
+MOTIVO|Razón|2
+NAIPE|Carta de la baraja|2
+NOBLE|De la aristocracia|2
 NOVIO|Pareja de una muchacha
-OLIVA|Aceituna
-OPACO|Que no deja pasar la luz
-OSTRA|Molusco que puede tener una perla
-PADRINO|Testigo del bautismo
-PALCO|Lugar en el teatro
-PANAL|Casa de las abejas
-PANTANO|Terreno barroso con agua
+OLIVA|Aceituna|2
+OPACO|Que no deja pasar la luz|2
+OSTRA|Molusco que puede tener una perla|2
+PADRINO|Testigo del bautismo|2
+PALCO|Lugar en el teatro|2
+PANAL|Casa de las abejas|2
+PANTANO|Terreno barroso con agua|2
 PAÑUELO|Tela para sonarse la nariz
-PARCHE|Remiendo
+PARCHE|Remiendo|2
 PARRILLA|Se usa para el asado
 PASO|Movimiento al caminar
-PAUSA|Interrupción breve
+PAUSA|Interrupción breve|2
 PEDAL|Se pisa en la bicicleta
-PIEZA|Parte de un todo
-PINZA|Herramienta para sujetar
+PIEZA|Parte de un todo|2
+PINZA|Herramienta para sujetar|2
 PIOJO|Insecto de la cabeza
-PLAGA|Invasión de insectos
-PLAZO|Tiempo para cumplir algo
-PLOMO|Metal pesado
+PLAGA|Invasión de insectos|2
+PLAZO|Tiempo para cumplir algo|2
+PLOMO|Metal pesado|2
 POETA|Escribe versos
-POLVO|Tierra muy fina
-PRESA|Dique; también animal cazado
-PRISA|Apuro
-PRUEBA|Examen
-RAMBLA|Paseo costero
-RANGO|Jerarquía
-RASGO|Característica
+POLVO|Tierra muy fina|2
+PRESA|Dique; también animal cazado|2
+PRISA|Apuro|2
+PRUEBA|Examen|2
+RAMBLA|Paseo costero|3
+RANGO|Jerarquía|2
+RASGO|Característica|2
 RECREO|Pausa en la escuela
-REJA|Barrotes de la ventana
-RELLENO|Lo que va adentro de la empanada
-RENTA|Ganancia
-REPISA|Estante
-RIEGO|Acción de echar agua a las plantas
-RITO|Ceremonia
-ROSCA|Vuelta de un tornillo; también pan dulce
+REJA|Barrotes de la ventana|2
+RELLENO|Lo que va adentro de la empanada|2
+RENTA|Ganancia|2
+REPISA|Estante|2
+RIEGO|Acción de echar agua a las plantas|2
+RITO|Ceremonia|2
+ROSCA|Vuelta de un tornillo; también pan dulce|2
 RUBIO|De pelo claro
-RUMBO|Dirección
-SABLE|Espada curva
+RUMBO|Dirección|2
+SABLE|Espada curva|2
 SALTO|Movimiento de elevarse del suelo
-SAUNA|Baño de vapor
+SAUNA|Baño de vapor|2
 SILBATO|Lo usa el árbitro
 SOBRINO|Hijo del hermano
-SOPLO|Aire que sale de la boca
-SUEGRA|Madre del cónyuge
-SURCO|Línea que abre el arado
-TALLO|Sostiene la flor
-TAPIZ|Tela decorativa colgada
+SOPLO|Aire que sale de la boca|2
+SUEGRA|Madre del cónyuge|2
+SURCO|Línea que abre el arado|2
+TALLO|Sostiene la flor|2
+TAPIZ|Tela decorativa colgada|2
 TECLA|Se aprieta para escribir
-TELON|Cortina del escenario
-TEMPLO|Edificio religioso
-TIMON|Dirige el barco
-TINTE|Colorante
+TELON|Cortina del escenario|2
+TEMPLO|Edificio religioso|2
+TIMON|Dirige el barco|2
+TINTE|Colorante|2
 TOBOGAN|Juego de plaza para deslizarse
-TRAGO|Bebida, sorbo
-TRAPO|Paño para limpiar
-TRIBU|Grupo de familias
+TRAGO|Bebida, sorbo|2
+TRAPO|Paño para limpiar|2
+TRIBU|Grupo de familias|2
 TROFEO|Premio del campeón
-TURNO|Orden para atender
-VAGON|Coche de tren
-VAINA|Funda de la espada
+TURNO|Orden para atender|2
+VAGON|Coche de tren|2
+VAINA|Funda de la espada|3
 VALIJA|Maleta
-VASIJA|Recipiente de barro
-VELOZ|Rápido
-VERJA|Reja
-VISTA|Sentido de los ojos
-VIUDA|Mujer que perdió al esposo
-YUNQUE|Bloque donde golpea el herrero
-ZARPA|Pata con uñas
-ZORZAL|Pájaro cantor del Río de la Plata
+VASIJA|Recipiente de barro|2
+VELOZ|Rápido|2
+VERJA|Reja|3
+VISTA|Sentido de los ojos|2
+VIUDA|Mujer que perdió al esposo|2
+YUNQUE|Bloque donde golpea el herrero|3
+ZARPA|Pata con uñas|2
+ZORZAL|Pájaro cantor del Río de la Plata|2
 ARVEJA|Legumbre verde redonda
 BATATA|Tubérculo dulce
-CALDO|Sopa clara
-CANELA|Especia de la torta
+CALDO|Sopa clara|2
+CANELA|Especia de la torta|2
 CHURRO|Masa frita con azúcar
 CHORIZO|Embutido del asado
-COMINO|Especia de las empanadas
+COMINO|Especia de las empanadas|2
 LIMONADA|Bebida de limón
-MATAMBRE|Corte de carne que se arrolla
-MOLLEJA|Achura del asado
+MATAMBRE|Corte de carne que se arrolla|2
+MOLLEJA|Achura del asado|2
 MORCILLA|Embutido de sangre
 ÑOQUI|Pasta de papa del 29
 PANQUEQUE|Masa fina de sartén
 POCHOCLO|Maíz inflado del cine
 POLENTA|Harina de maíz cocida
 RAVIOL|Pasta rellena cuadrada
-TALLARIN|Fideo largo y plano
-TARTA|Masa con relleno al horno
-REMOLACHA|Hortaliza roja
-RUCULA|Hoja verde picante
-ALBAHACA|Hierba del pesto
-CHAMPIÑON|Hongo de ensalada
+TALLARIN|Fideo largo y plano|2
+TARTA|Masa con relleno al horno|2
+REMOLACHA|Hortaliza roja|2
+RUCULA|Hoja verde picante|2
+ALBAHACA|Hierba del pesto|2
+CHAMPIÑON|Hongo de ensalada|2
 MANDARINA|Cítrico fácil de pelar
-MEMBRILLO|Dulce del vigilante con queso
-QUINOTO|Cítrico chiquito
+MEMBRILLO|Dulce del vigilante con queso|2
+QUINOTO|Cítrico chiquito|2
 FRAMBUESA|Fruto rojo del bosque
-ARANDANO|Fruto azul del bosque
-GRANADA|Fruta de granos rojos
-BUITRE|Ave carroñera
-CAIMAN|Reptil parecido al cocodrilo
+ARANDANO|Fruto azul del bosque|2
+GRANADA|Fruta de granos rojos|2
+BUITRE|Ave carroñera|2
+CAIMAN|Reptil parecido al cocodrilo|2
 CHANCHO|Cerdo
-CHIVO|Cría de la cabra
-COBRA|Serpiente de capucha
-COLIBRI|Pájaro diminuto que aletea rapidísimo
-CUERVO|Pájaro negro
-GACELA|Antílope veloz
+CHIVO|Cría de la cabra|2
+COBRA|Serpiente de capucha|2
+COLIBRI|Pájaro diminuto que aletea rapidísimo|2
+CUERVO|Pájaro negro|2
+GACELA|Antílope veloz|2
 GAVIOTA|Ave de la playa
 GORRION|Pajarito de ciudad
-HALCON|Ave rapaz veloz
+HALCON|Ave rapaz veloz|2
 HAMSTER|Roedor de mascota
-HIENA|Animal que parece reírse
-LANGOSTA|Crustáceo; también plaga
+HIENA|Animal que parece reírse|2
+LANGOSTA|Crustáceo; también plaga|2
 LECHUZA|Ave nocturna
-LOMBRIZ|Gusano de la tierra
+LOMBRIZ|Gusano de la tierra|2
 MAPACHE|Animal con antifaz
-MARMOTA|Roedor que duerme mucho
+MARMOTA|Roedor que duerme mucho|2
 PANDA|Oso blanco y negro
-PELICANO|Ave con bolsa en el pico
+PELICANO|Ave con bolsa en el pico|2
 PUERCOESPIN|Roedor con púas
 RENO|Tira el trineo de Papá Noel
 RINOCERONTE|Animal con cuerno en la nariz
-TEJON|Mamífero que cava madrigueras
-VIZCACHA|Roedor de la pampa
+TEJON|Mamífero que cava madrigueras|3
+VIZCACHA|Roedor de la pampa|2
 ZORRINO|Animal que larga mal olor
-ALPACA|Camélido andino lanudo
+ALPACA|Camélido andino lanudo|2
 LANGOSTINO|Crustáceo rosado
-CAMARON|Crustáceo chico
-CALAMAR|Molusco de las rabas
-ALMEJA|Molusco de dos valvas
-MEJILLON|Molusco negro de la paella
+CAMARON|Crustáceo chico|2
+CALAMAR|Molusco de las rabas|2
+ALMEJA|Molusco de dos valvas|2
+MEJILLON|Molusco negro de la paella|2
 CUCARACHA|Insecto que todos odian
-LIBELULA|Insecto de alas transparentes
+LIBELULA|Insecto de alas transparentes|2
 LUCIERNAGA|Insecto que brilla de noche
 ESCARABAJO|Insecto de caparazón duro
 AVISPA|Insecto que pica
-POLILLA|Mariposa nocturna
+POLILLA|Mariposa nocturna|2
 AEROPUERTO|Donde aterrizan los aviones
 AVENIDA|Calle ancha
 BIBLIOTECA|Lugar lleno de libros
-CAPILLA|Iglesia pequeña
+CAPILLA|Iglesia pequeña|2
 CARCEL|Prisión
 CATEDRAL|Iglesia principal
 CEMENTERIO|Lugar de tumbas
-CLINICA|Hospital privado
+CLINICA|Hospital privado|2
 ESQUINA|Donde se cruzan dos calles
 ESTACION|Parada del tren
-FABRICA|Lugar de producción
+FABRICA|Lugar de producción|2
 FARMACIA|Venden remedios
 GRANJA|Campo con animales
 HOTEL|Alojamiento para viajeros
 KIOSCO|Venden golosinas
 MURALLA|Muro que rodea una ciudad
 PANADERIA|Venden pan y facturas
-PASILLO|Corredor
+PASILLO|Corredor|2
 PELUQUERIA|Cortan el pelo
-QUINTA|Casa de campo con huerta
-SOTANO|Piso bajo tierra
-TERRAZA|Azotea
+QUINTA|Casa de campo con huerta|2
+SOTANO|Piso bajo tierra|2
+TERRAZA|Azotea|2
 UNIVERSIDAD|Casa de altos estudios
 VEREDA|Donde caminan los peatones
 ZOOLOGICO|Lugar con animales en exhibición
 ABRAZO|Saludo con los brazos
-ACCION|Hecho
-ACENTO|Tilde; también tonada
+ACCION|Hecho|2
+ACENTO|Tilde; también tonada|2
 AGENDA|Libreta de citas
 AGUJA|Sirve para coser
 ALARMA|Aviso sonoro
 ALBUM|Libro de fotos o figuritas
-ALIENTO|Aire que se exhala
-ALTURA|Elevación
+ALIENTO|Aire que se exhala|2
+ALTURA|Elevación|2
 ANTENA|Recibe señales
-ANZUELO|Gancho para pescar
-APUESTA|Lo que se juega por dinero
+ANZUELO|Gancho para pescar|2
+APUESTA|Lo que se juega por dinero|2
 ARMA|Instrumento para atacar
 ARRUGA|Pliegue de la piel
-AZOTEA|Techo plano
+AZOTEA|Techo plano|2
 BALANZA|Sirve para pesar
-BARRIL|Tonel
+BARRIL|Tonel|2
 BASTON|Ayuda para caminar
-BOLETO|Pasaje
-BOTIN|Calzado de fútbol
+BOLETO|Pasaje|2
+BOTIN|Calzado de fútbol|2
 BURBUJA|Esfera de jabón
-CABLE|Hilo conductor
-CADENA|Eslabones unidos
-CALCULO|Cuenta matemática
-CANASTA|Cesto
+CABLE|Hilo conductor|2
+CADENA|Eslabones unidos|2
+CALCULO|Cuenta matemática|2
+CANASTA|Cesto|2
 CANDADO|Cierra con llave
 CARPA|Tienda de campaña
-CARTEL|Letrero
-CASCABEL|Campanita
-CENIZA|Resto del fuego
+CARTEL|Letrero|2
+CASCABEL|Campanita|2
+CENIZA|Resto del fuego|2
 CHISTE|Broma
-COPIA|Duplicado
-CUOTA|Pago parcial
-DESFILE|Marcha
+COPIA|Duplicado|2
+CUOTA|Pago parcial|2
+DESFILE|Marcha|2
 DIARIO|Periódico
 DISFRAZ|Para el carnaval
 EDIFICIO|Construcción grande
 EJEMPLO|Muestra
 EMPATE|Igualdad en el resultado
 ENCHUFE|Conecta a la corriente
-ESCENA|Parte de una obra
-ESFERA|Bola
+ESCENA|Parte de una obra|2
+ESFERA|Bola|2
 ESPUMA|Burbujas juntas
-ESTRENO|Primera función
-ETIQUETA|Rótulo
+ESTRENO|Primera función|2
+ETIQUETA|Rótulo|2
 FIGURITA|Se pega en el álbum del Mundial
-FLECO|Borde de hilos
+FLECO|Borde de hilos|2
 FOGATA|Fuego al aire libre
 FRASCO|Envase de vidrio
-GALERA|Sombrero del mago
+GALERA|Sombrero del mago|2
 GANCHO|Sirve para colgar
 GARAJE|Lugar para el auto
 GOTERA|Agua que cae del techo
-HAZAÑA|Proeza
+HAZAÑA|Proeza|2
 HERIDA|Lesión
-HERENCIA|Lo que se recibe al fallecer alguien
+HERENCIA|Lo que se recibe al fallecer alguien|2
 HUERTA|Terreno de verduras
 INCENDIO|Fuego grande
 INSECTO|Tiene seis patas
 LADRON|Roba
-LEYENDA|Relato tradicional
-LIMOSNA|Dinero dado a un pobre
-LLANTO|Lágrimas
-MANCHA|Suciedad
-MAQUETA|Modelo a escala
-MASCARA|Tapa la cara
+LEYENDA|Relato tradicional|2
+LIMOSNA|Dinero dado a un pobre|2
+LLANTO|Lágrimas|2
+MANCHA|Suciedad|2
+MAQUETA|Modelo a escala|2
+MASCARA|Tapa la cara|2
 MOLINO|Muele con el viento
 MUÑECO|Juguete con forma humana
 NAUFRAGIO|Hundimiento de un barco
 NEUMATICO|Rueda de goma
-OBSEQUIO|Regalo
-OFERTA|Rebaja
-OLEAJE|Movimiento de las olas
-ORGULLO|Satisfacción propia
-PALANCA|Barra para mover peso
+OBSEQUIO|Regalo|2
+OFERTA|Rebaja|2
+OLEAJE|Movimiento de las olas|2
+ORGULLO|Satisfacción propia|2
+PALANCA|Barra para mover peso|2
 PANTUFLA|Calzado de entrecasa
-PAQUETE|Envoltorio
+PAQUETE|Envoltorio|2
 PARADA|Lugar donde para el colectivo
 PASAPORTE|Documento para viajar
-PEDAZO|Trozo
-PENSAMIENTO|Idea
-PISADA|Huella
+PEDAZO|Trozo|2
+PENSAMIENTO|Idea|2
+PISADA|Huella|2
 PLUMERO|Sirve para sacar el polvo
-POLEA|Rueda con soga
-PORTON|Puerta grande
-POSTE|Palo vertical
-PROMESA|Compromiso
-PUBLICO|Espectadores
-PULSO|Latido en la muñeca
+POLEA|Rueda con soga|2
+PORTON|Puerta grande|2
+POSTE|Palo vertical|2
+PROMESA|Compromiso|2
+PUBLICO|Espectadores|2
+PULSO|Latido en la muñeca|2
 RASCACIELOS|Edificio altísimo
-RECIBO|Comprobante
-REFUGIO|Lugar seguro
+RECIBO|Comprobante|2
+REFUGIO|Lugar seguro|2
 RELAMPAGO|Luz del rayo
 REMEDIO|Medicamento
-RETRATO|Foto o pintura de una persona
-RINCON|Esquina interior
+RETRATO|Foto o pintura de una persona|2
+RINCON|Esquina interior|2
 SEMAFORO|Luz de tránsito
-SERENATA|Música bajo la ventana
-SILUETA|Contorno
-SORBETE|Pajita para tomar
-TARIMA|Plataforma
+SERENATA|Música bajo la ventana|2
+SILUETA|Contorno|2
+SORBETE|Pajita para tomar|2
+TARIMA|Plataforma|2
 TATUAJE|Dibujo en la piel
 TRAMPOLIN|Para saltar a la pileta
 TRINEO|Vehículo sobre nieve
 TROMPO|Juguete que gira
 VAINILLA|Saborizante de postres
-VENDA|Tela para heridas
-VITRINA|Mueble de vidrio
-VOLANTE|Dirige el auto
-ZOCALO|Borde inferior de la pared
+VENDA|Tela para heridas|2
+VITRINA|Mueble de vidrio|2
+VOLANTE|Dirige el auto|2
+ZOCALO|Borde inferior de la pared|2
 ABRAZAR|Rodear con los brazos
-ACABAR|Terminar
+ACABAR|Terminar|2
 ACEPTAR|Decir que sí
-ACOSTAR|Llevar a la cama
+ACOSTAR|Llevar a la cama|2
 ADIVINAR|Acertar sin saber
 AGARRAR|Tomar con la mano
 APAGAR|Lo contrario de encender
@@ -2107,7 +2180,7 @@ ENCENDER|Prender
 APRENDER|Adquirir conocimiento
 ARMAR|Montar las piezas
 ATRAPAR|Agarrar algo que se escapa
-AVISAR|Advertir
+AVISAR|Advertir|2
 BARRER|Limpiar con escoba
 BORRAR|Quitar lo escrito
 BRILLAR|Dar luz
@@ -2115,57 +2188,57 @@ CAER|Ir al suelo
 CALLAR|Hacer silencio
 CAMBIAR|Transformar
 CAMINAR|Andar
-CANSAR|Agotar
+CANSAR|Agotar|2
 CARGAR|Llevar peso
 CAZAR|Atrapar animales
 CENAR|Comer de noche
 COBRAR|Recibir un pago
-COLGAR|Suspender
+COLGAR|Suspender|2
 CONTAR|Enumerar; también narrar
 CORTAR|Dividir con tijera
 CRECER|Aumentar de tamaño
 CUIDAR|Proteger
-CURAR|Sanar
-DEJAR|Soltar
+CURAR|Sanar|2
+DEJAR|Soltar|2
 DIBUJAR|Hacer trazos con lápiz
-DUDAR|No estar seguro
-ELEGIR|Optar
+DUDAR|No estar seguro|2
+ELEGIR|Optar|2
 EMPEZAR|Comenzar
 ENSEÑAR|Transmitir conocimientos
 ENVIAR|Mandar
 ESCONDER|Ocultar
 ESPERAR|Aguardar
-ESTIRAR|Alargar
-EVITAR|Esquivar
+ESTIRAR|Alargar|2
+EVITAR|Esquivar|2
 EXPLICAR|Aclarar
-FALTAR|No estar
+FALTAR|No estar|2
 FESTEJAR|Celebrar
 FLOTAR|Mantenerse sobre el agua
-FREIR|Cocinar en aceite
+FREIR|Cocinar en aceite|2
 GASTAR|Usar dinero
 GIRAR|Dar vueltas
 GOLPEAR|Pegar
 GRITAR|Hablar muy fuerte
 GUARDAR|Poner a resguardo
 HERVIR|Calentar el agua hasta las burbujas
-HUIR|Escapar
+HUIR|Escapar|2
 LLAMAR|Telefonear
-LLEGAR|Arribar
-LLEVAR|Transportar
+LLEGAR|Arribar|2
+LLEVAR|Transportar|2
 LIMPIAR|Sacar la suciedad
-MANDAR|Ordenar; también enviar
+MANDAR|Ordenar; también enviar|2
 MANEJAR|Conducir
 MEZCLAR|Juntar ingredientes
-MOJAR|Humedecer
+MOJAR|Humedecer|2
 MORDER|Clavar los dientes
 MOVER|Cambiar de lugar
-NEGAR|Decir que no
+NEGAR|Decir que no|2
 NEVAR|Caer copos del cielo
-OCULTAR|Esconder
+OCULTAR|Esconder|2
 OLVIDAR|Perder un recuerdo
 ORDENAR|Poner en su lugar
 PASEAR|Dar una vuelta
-PEDIR|Solicitar
+PEDIR|Solicitar|2
 PEGAR|Unir con adhesivo
 PELEAR|Discutir, luchar
 PERMITIR|Dejar hacer
@@ -2173,156 +2246,161 @@ PESCAR|Sacar peces
 PISAR|Poner el pie encima
 PLANTAR|Poner en la tierra
 PREGUNTAR|Hacer una consulta
-PRESTAR|Dar por un tiempo
-PROBAR|Ensayar; también degustar
-QUEMAR|Arder
+PRESTAR|Dar por un tiempo|2
+PROBAR|Ensayar; también degustar|2
+QUEMAR|Arder|2
 RECORDAR|Traer a la memoria
 REGAR|Echar agua a las plantas
 RESPIRAR|Inhalar y exhalar
-ROBAR|Hurtar
+ROBAR|Hurtar|2
 ROMPER|Quebrar
-SACAR|Extraer
+SACAR|Extraer|2
 SALUDAR|Decir hola
 SECAR|Quitar la humedad
-SEGUIR|Ir detrás
+SEGUIR|Ir detrás|2
 SENTAR|Apoyar en una silla
-SERVIR|Ser útil; también poner en el plato
+SERVIR|Ser útil; también poner en el plato|2
 SILBAR|Hacer sonar los labios
-SONAR|Hacer ruido
+SONAR|Hacer ruido|2
 SOPLAR|Echar aire
-SUFRIR|Padecer
-TEJER|Hacer con agujas e hilo
+SUFRIR|Padecer|2
+TEJER|Hacer con agujas e hilo|2
 TEMBLAR|Sacudirse de frío o miedo
 TIRAR|Lanzar
-TOSER|Carraspear fuerte
+TOSER|Carraspear fuerte|2
 TRABAJAR|Laburar
-TRAER|Llevar hacia acá
+TRAER|Llevar hacia acá|2
 VESTIR|Poner ropa
 VOTAR|Elegir en la urna
-ARREGLAR|Reparar
-AMABLE|Cortés
-ANTIGUO|Muy viejo
+ARREGLAR|Reparar|2
+AMABLE|Cortés|2
+ANTIGUO|Muy viejo|2
 ATENTO|Que presta atención
-BRAVO|Valiente; también enojado
-BREVE|Corto
-CALLADO|Silencioso
-CANSADO|Agotado
-CERCANO|Próximo
-COMICO|Gracioso
+BRAVO|Valiente; también enojado|2
+BREVE|Corto|2
+CALLADO|Silencioso|2
+CANSADO|Agotado|2
+CERCANO|Próximo|2
+COMICO|Gracioso|2
 CRUDO|Sin cocinar
-CURIOSO|Que quiere saber
-DEBIL|Sin fuerza
+CURIOSO|Que quiere saber|2
+DEBIL|Sin fuerza|2
 DESNUDO|Sin ropa
 DIFICIL|Complicado
 DORMIDO|Que está en la cama con los ojos cerrados
-EXTRAÑO|Raro
-FALSO|No verdadero
-FAMOSO|Conocido
-FRESCO|Un poco frío; también recién hecho
-GENIAL|Excelente
-HONDO|Profundo
-HUMEDO|Algo mojado
-IGUAL|Idéntico
-INMENSO|Enorme
-LEJANO|Distante
-LIGERO|Liviano
-MADURO|Listo para comer, dicho de una fruta
-MAGICO|Encantado
-MEJOR|Superior
-NERVIOSO|Intranquilo
-NORMAL|Común
-PEOR|Inferior
-PEQUEÑO|Chico
+EXTRAÑO|Raro|2
+FALSO|No verdadero|2
+FAMOSO|Conocido|2
+FRESCO|Un poco frío; también recién hecho|2
+GENIAL|Excelente|2
+HONDO|Profundo|2
+HUMEDO|Algo mojado|2
+IGUAL|Idéntico|2
+INMENSO|Enorme|2
+LEJANO|Distante|2
+LIGERO|Liviano|2
+MADURO|Listo para comer, dicho de una fruta|2
+MAGICO|Encantado|2
+MEJOR|Superior|2
+NERVIOSO|Intranquilo|2
+NORMAL|Común|2
+PEOR|Inferior|2
+PEQUEÑO|Chico|2
 PERFECTO|Sin errores
 POSIBLE|Que puede pasar
-PRONTO|Enseguida
-PROFUNDO|Hondo
-PUNTUAL|Que llega a horario
-QUIETO|Sin moverse
-RARO|Extraño
-SABIO|Que sabe mucho
-SALVAJE|No domesticado
-SEGURO|Sin riesgo
-SENCILLO|Simple
-SERIO|Que no se ríe
-SIMPLE|Fácil
-SUAVE|Liso al tacto
+PRONTO|Enseguida|2
+PROFUNDO|Hondo|2
+PUNTUAL|Que llega a horario|2
+QUIETO|Sin moverse|2
+RARO|Extraño|2
+SABIO|Que sabe mucho|2
+SALVAJE|No domesticado|2
+SEGURO|Sin riesgo|2
+SENCILLO|Simple|2
+SERIO|Que no se ríe|2
+SIMPLE|Fácil|2
+SUAVE|Liso al tacto|2
 TONTO|Poco inteligente
-TOTAL|Completo
-TRANQUILO|Calmo
+TOTAL|Completo|2
+TRANQUILO|Calmo|2
 ULTIMO|El que va al final
-UNICO|Solo uno
+UNICO|Solo uno|2
 VALIENTE|Con coraje
-VERDADERO|Real
+VERDADERO|Real|2
 BELGRANO|Creador de la bandera
-SARMIENTO|Padre del aula
-BORGES|Autor de El Aleph
-CORTAZAR|Autor de Rayuela
-QUINO|Creador de Mafalda
+SARMIENTO|Padre del aula|2
+BORGES|Autor de El Aleph|2
+CORTAZAR|Autor de Rayuela|2
+QUINO|Creador de Mafalda|2
 MAFALDA|Nena de la historieta que odia la sopa
-GARDEL|El Zorzal Criollo
-PIAZZOLLA|Revolucionó el tango con su bandoneón
-FANGIO|Quíntuple campeón de Fórmula 1
-CHAMAME|Música del Litoral con acordeón
-MALAMBO|Zapateo del gaucho
+GARDEL|El Zorzal Criollo|2
+PIAZZOLLA|Revolucionó el tango con su bandoneón|2
+FANGIO|Quíntuple campeón de Fórmula 1|2
+CHAMAME|Música del Litoral con acordeón|2
+MALAMBO|Zapateo del gaucho|2
 PONCHO|Abrigo del gaucho
-FACON|Cuchillo del gaucho
-BOLEADORAS|Arma gaucha de piedras y tientos
+FACON|Cuchillo del gaucho|2
+BOLEADORAS|Arma gaucha de piedras y tientos|2
 ESTANCIA|Gran establecimiento de campo
-PULPERIA|Almacén y bar del campo antiguo
-FILETE|Arte decorativo porteño; también corte de carne
-CONVENTILLO|Casa de inquilinato porteña
+PULPERIA|Almacén y bar del campo antiguo|2
+FILETE|Arte decorativo porteño; también corte de carne|2
+CONVENTILLO|Casa de inquilinato porteña|2
 PORTEÑO|Nacido en Buenos Aires
-CUYO|Región de Mendoza, San Juan y San Luis
+CUYO|Región de Mendoza, San Juan y San Luis|2
 LITORAL|Región de los grandes ríos
-PUNA|Altiplano del noroeste
-QUEBRADA|Paso estrecho entre montañas
-CALAFATE|Ciudad del glaciar Perito Moreno; también un fruto
-TANDIL|Ciudad de la Piedra Movediza
-LUJAN|Ciudad de la basílica
-NEUQUEN|Provincia de Vaca Muerta
-CHUBUT|Provincia de Puerto Madryn
-FORMOSA|Provincia del norte limítrofe con Paraguay
-CATAMARCA|Provincia del noroeste
-CORRIENTES|Provincia de los esteros del Iberá
-ALGEBRA|Rama de la matemática con letras
+PUNA|Altiplano del noroeste|3
+QUEBRADA|Paso estrecho entre montañas|2
+CALAFATE|Ciudad del glaciar Perito Moreno; también un fruto|2
+TANDIL|Ciudad de la Piedra Movediza|2
+LUJAN|Ciudad de la basílica|2
+NEUQUEN|Provincia de Vaca Muerta|2
+CHUBUT|Provincia de Puerto Madryn|2
+FORMOSA|Provincia del norte limítrofe con Paraguay|2
+CATAMARCA|Provincia del noroeste|2
+CORRIENTES|Provincia de los esteros del Iberá|2
+ALGEBRA|Rama de la matemática con letras|2
 ANGULO|Abertura entre dos líneas
 CELULA|Unidad de la vida
 CIRCULO|Figura redonda
 CUADRADO|Figura de cuatro lados iguales
-DIAMETRO|Atraviesa el círculo por el centro
-FRACCION|Parte de un entero
+DIAMETRO|Atraviesa el círculo por el centro|2
+FRACCION|Parte de un entero|2
 GEOMETRIA|Estudio de las figuras
-GRAFICO|Representación con barras o líneas
+GRAFICO|Representación con barras o líneas|2
 IMPAR|Que no se divide por dos
-MOLECULA|Unión de átomos
-PRISMA|Cuerpo que descompone la luz
+MOLECULA|Unión de átomos|2
+PRISMA|Cuerpo que descompone la luz|2
 RECTA|Línea sin curvas
 RESTA|Operación con el signo menos
 TRIANGULO|Figura de tres lados
 VOLUMEN|Espacio que ocupa algo; también intensidad del sonido
-METODO|Procedimiento
-TEORIA|Explicación científica
+METODO|Procedimiento|2
+TEORIA|Explicación científica|2
 SATELITE|Gira alrededor de un planeta
 TELESCOPIO|Sirve para mirar las estrellas
 MICROSCOPIO|Sirve para ver lo diminuto
 ANTIVIRUS|Protege la computadora
 CARGADOR|Recarga el celular
-CURSOR|Flecha que se mueve en la pantalla
+CURSOR|Flecha que se mueve en la pantalla|2
 DESCARGA|Bajar un archivo
 IMPRESORA|Saca copias en papel
 MONITOR|Pantalla de la compu
 NAVEGADOR|Programa para ver páginas web
-SERVIDOR|Computadora que atiende pedidos
-ALGORITMO|Serie de pasos para resolver un problema
-VARIABLE|Guarda un valor en un programa
+SERVIDOR|Computadora que atiende pedidos|2
+ALGORITMO|Serie de pasos para resolver un problema|2
+VARIABLE|Guarda un valor en un programa|2
 FUNCION|Bloque de código reutilizable
-BUCLE|Repetición en un programa
+BUCLE|Repetición en un programa|2
 CONTRASEÑA|Clave secreta
 PERFIL|Página de un usuario
 SEGUIDOR|Sigue a alguien en redes
 MEME|Imagen graciosa que circula
-PODCAST|Programa de audio por internet`.split("\n").map(l => { const i = l.indexOf("|"); return { w: l.slice(0, i).trim(), c: l.slice(i + 1).trim() }; });
+PODCAST|Programa de audio por internet`.split("\n").map(l => { const [w, c, d] = l.split("|"); return { w: w.trim(), c: c.trim(), d: +d || 1 }; });
+
+/* Puntaje: letras × dificultad de la pista */
+const MULT = { 1: 1, 2: 1.5, 3: 2 };
+const DIFF_NAME = { 1: "fácil", 2: "media", 3: "difícil" };
+function wordPoints(len, d){ return Math.round(len * (MULT[d] || 1)); }
 
 /* ---------- Generador de tablero cuadrado ---------- */
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -2366,7 +2444,7 @@ function tryGen(seed, N){
       }
       gd[r][c][dir] = true;
     }
-    placed.push({ w: item.w, c: item.c, r: sr, col: sc, dir });
+    placed.push({ w: item.w, c: item.c, d: item.d, r: sr, col: sc, dir });
     used.add(item.w);
   }
 
@@ -2415,7 +2493,7 @@ function finalize(t){
   const words = across.concat(down).map((p, id) => {
     const cells = [];
     for (let i = 0; i < p.w.length; i++) cells.push([p.r + (p.dir === "d" ? i : 0), p.col + (p.dir === "a" ? i : 0)]);
-    return { id, ans: p.w, clue: p.c, num: p.num, dir: p.dir, cells };
+    return { id, ans: p.w, clue: p.c, d: p.d, pts: wordPoints(p.w.length, p.d), num: p.num, dir: p.dir, cells };
   });
   const sol = Array.from({length:N}, () => Array(N).fill(""));
   const num = Array.from({length:N}, () => Array(N).fill(0));
@@ -2442,30 +2520,45 @@ function generate(seed){
 /* ---------- Estado ---------- */
 const $ = id => document.getElementById(id);
 const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k, v){ try { localStorage.setItem(k, v); } catch(e){} } };
+const tabStore = { get(k){ try { return sessionStorage.getItem(k); } catch(e){ return null; } }, set(k, v){ try { sessionStorage.setItem(k, v); } catch(e){} } };
 const ID_PREFIX = "crucigramas-vs-";
 const PEER_OPTS = Object.assign({ debug: 0 }, window.__PEER_OPTS || {});
 const HAS_PEER = typeof window.Peer === "function";
+const MAX_PLAYERS = 5, ROT_SECS = window.__ROT_SECS > 0 ? window.__ROT_SECS : 90;   /* __ROT_SECS solo para pruebas */
+function rid(){ return Math.random().toString(36).slice(2, 10); }
+/* Identidad de esta pestaña: sobrevive a una recarga, así se puede volver a la misma partida */
+const UID = tabStore.get("cvs-uid") || (rid() + rid());
+tabStore.set("cvs-uid", UID);
+
 const S = {
-  screen: "lobby", mode: null, name: "", code: "",
-  game: null, P: null, entries: null, owners: {}, seq: 0, claims: new Set(),
-  sel: null, rivalName: "", rivalHere: false, cdEnd: 0, playEnd: 0,
-  hostSeen: false, joinTimer: null, busy: false
+  screen: "lobby", role: null, /* "host" | "guest" | "solo" */
+  name: "", color: "azul", code: "",
+  me: 0, players: [], cfg: { mode: "mismo", dur: 600 },
+  game: null, boards: [], scores: [], rm: [], rmNo: null, seq: 0,
+  bIdx: -1, bKey: null, P: null, entries: null, owners: {}, claims: new Set(), sel: null,
+  viewBoard: false, viewIdx: null, gameId: null,
+  hostSeen: false, joinTimer: null, busy: false, seenNo: 0,
+  cdEnd: 0, playStart: 0, playEnd: 0
 };
-let PEER = null, CONN = null;
+let PEER = null, CONN = null;      // invitado: conexión con el anfitrión
+const GUESTS = new Map();          // anfitrión: conexión -> uid
 const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 if (isTouch) document.body.classList.add("touch");
 
 function cleanName(x){ return String(x == null ? "" : x).replace(/[\u0000-\u001f\u007f-\u009f­​-‏‪-‮⁠-⁯﻿]/g, "").trim().slice(0, 20); }
-function rid(){ return Math.random().toString(36).slice(2, 10); }
 function randSeed(){ return Math.floor(Math.random() * 2147483647); }
 function genCode(){ const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random()*A.length)]; return s; }
 function cleanCode(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4); }
-function myKey(){ return S.mode === "guest" ? "g" : "h"; }
 function fmt(t){ t = Math.max(0, t|0); return Math.floor(t/60) + ":" + String(t%60).padStart(2, "0"); }
 function inviteUrl(){ const u = new URL(location.href); u.search = ""; u.hash = ""; u.searchParams.set("sala", S.code); return u.toString(); }
+const plural = (n, a, b) => n + " " + (n === 1 ? a : b);
+const pname = i => (S.players[i] && S.players[i].name) || "Alguien";
+const isHostLike = () => S.role === "host" || S.role === "solo";
+const playing = () => S.game && (S.game.st === "cd" || S.game.st === "play");
+function listNames(arr){ return arr.length <= 1 ? (arr[0] || "") : arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1]; }
 
 let toastT = null;
-function toast(msg){ const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3000); }
+function toast(msg){ const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3200); }
 
 function showScreen(s){
   S.screen = s;
@@ -2475,8 +2568,73 @@ function showScreen(s){
 }
 function setBusy(b){ S.busy = b; $("btnCreate").disabled = b; $("btnJoin").disabled = b; }
 
-/* ---------- Nombre e invitación ---------- */
+/* ---------- Nombre, color e invitación ---------- */
 S.name = cleanName(store.get("cvs-name")) || ("Jugador " + Math.floor(10 + Math.random()*90));
+const COLORS = {
+  azul:     { n: "Azul",     l: "#2754D8", d: "#7D9CFF" },
+  naranja:  { n: "Naranja",  l: "#D9690B", d: "#FFA24D" },
+  verde:    { n: "Verde",    l: "#1E8A4C", d: "#4FD08A" },
+  violeta:  { n: "Violeta",  l: "#7B3FE4", d: "#B794FF" },
+  rosa:     { n: "Rosa",     l: "#D6337A", d: "#FF7FB5" },
+  turquesa: { n: "Turquesa", l: "#0E8A8A", d: "#3FD6D0" },
+  marron:   { n: "Marrón",   l: "#8B5A2B", d: "#D29A62" }
+};
+const COLOR_KEYS = Object.keys(COLORS);
+const validColor = k => typeof k === "string" && Object.prototype.hasOwnProperty.call(COLORS, k);
+S.color = validColor(store.get("cvs-color")) ? store.get("cvs-color") : "azul";
+
+/* Cada uno se ve con su color; si dos coinciden, el que llegó después usa uno libre.
+   Se resuelve desde tu punto de vista: tu color nunca cambia. */
+function shownColors(){
+  const list = S.players.length ? S.players.map(p => p.col) : [S.color];
+  const me = S.players.length ? S.me : 0;
+  const out = [], used = new Set([S.color]);
+  out[me] = S.color;
+  list.forEach((c, i) => {
+    if (i === me) return;
+    let k = validColor(c) && !used.has(c) ? c : COLOR_KEYS.find(x => !used.has(x)) || "naranja";
+    used.add(k); out[i] = k;
+  });
+  return out;
+}
+let lastColorCss = "";
+function applyColors(){
+  const shown = shownColors();
+  const me = S.players.length ? S.me : 0;
+  const firstOther = shown.findIndex((_, i) => i !== me);
+  const rvKey = firstOther >= 0 ? shown[firstOther] : (S.color === "naranja" ? "azul" : "naranja");
+  const vars = (mode, pct) => {
+    let v = "--you:" + COLORS[S.color][mode] + ";--rival:" + COLORS[rvKey][mode] + ";" +
+      "--you-soft:color-mix(in srgb,var(--you) " + pct + "%,var(--cell));--rival-soft:color-mix(in srgb,var(--rival) " + pct + "%,var(--cell));";
+    for (let i = 0; i < MAX_PLAYERS; i++){
+      const k = shown[i] || COLOR_KEYS[i % COLOR_KEYS.length];
+      v += "--p" + i + ":" + COLORS[k][mode] + ";--p" + i + "s:color-mix(in srgb,var(--p" + i + ") " + pct + "%,var(--cell));";
+    }
+    return v;
+  };
+  const css = ":root{" + vars("l", 24) + "}" +
+    "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + vars("d", 34) + "}}" +
+    ":root[data-theme=\"dark\"]{" + vars("d", 34) + "}";
+  if (css === lastColorCss) return;
+  lastColorCss = css;
+  let st = document.getElementById("playerColors");
+  if (!st){ st = document.createElement("style"); st.id = "playerColors"; document.head.append(st); }
+  st.textContent = css;
+}
+const pc = i => "var(--p" + i + ")", pcs = i => "var(--p" + i + "s)";
+(function buildSwatches(){
+  const box = $("swatches");
+  for (const [k, c] of Object.entries(COLORS)){
+    const b = document.createElement("button"); b.type = "button"; b.className = "sw"; b.dataset.k = k;
+    b.setAttribute("role", "radio"); b.setAttribute("aria-label", c.n); b.title = c.n;
+    b.style.setProperty("--l", c.l); b.style.setProperty("--d", c.d);
+    b.addEventListener("click", () => { S.color = k; store.set("cvs-color", k); paintSwatches(); applyColors(); });
+    box.append(b);
+  }
+  paintSwatches();
+})();
+function paintSwatches(){ document.querySelectorAll("#swatches .sw").forEach(b => b.setAttribute("aria-checked", String(b.dataset.k === S.color))); }
+applyColors();
 $("nick").value = S.name;
 $("nick").addEventListener("input", () => { S.name = cleanName($("nick").value) || "Jugador"; store.set("cvs-name", S.name); });
 $("noNet").hidden = HAS_PEER;
@@ -2484,9 +2642,23 @@ $("duelControls").hidden = !HAS_PEER;
 const invited = cleanCode(new URLSearchParams(location.search).get("sala"));
 if (invited.length === 4 && HAS_PEER){
   $("joinCode").value = invited;
-  $("inviteNote").textContent = "Te invitaron a la sala " + invited + ". Poné tu nombre y tocá Unirme.";
+  $("inviteNote").textContent = "Te invitaron a la sala " + invited + ". Poné tu nombre, elegí tu color y tocá Unirme.";
   $("inviteNote").hidden = false;
 }
+
+/* ---------- Tableros ---------- */
+const PZ = new Map();
+function puzzle(seed){
+  if (!PZ.has(seed)){ PZ.set(seed, generate(seed)); if (PZ.size > 40) PZ.delete(PZ.keys().next().value); }
+  return PZ.get(seed);
+}
+/* Qué tablero tiene el jugador i: en Rotación, el tablero b pasa del jugador b al b+1 en cada giro */
+function boardIndexFor(i){
+  if (!S.game || S.game.mode !== "rotacion") return 0;
+  const n = S.boards.length || 1, r = S.game.rot || 0;
+  return (((i - r) % n) + n) % n;
+}
+const zeroScore = () => ({ pts: 0, words: 0, last: 0 });
 
 /* ---------- Conexión (PeerJS) ---------- */
 function openPeer(id){
@@ -2504,12 +2676,18 @@ function openPeer(id){
 }
 function onPeerError(p, err){
   if (PEER !== p) return;
-  const type = err && err.type;
-  if (type === "peer-unavailable" && S.mode === "guest" && !S.hostSeen){
+  if (err && err.type === "peer-unavailable" && S.role === "guest" && !S.hostSeen){
     leaveRoom(); toast("No encontramos la sala " + S.code + ". Revisá el código o pedile un link nuevo.");
   }
 }
 function send(msg){ if (CONN && CONN.open){ try { CONN.send(msg); } catch(e){} } }
+
+function resetRoomState(){
+  S.players = []; S.me = 0; S.cfg = { mode: "mismo", dur: 600 }; S.game = { st: "wait" };
+  S.boards = []; S.scores = []; S.rm = []; S.rmNo = null; S.seq = 0; S.seenNo = 0;
+  S.bIdx = -1; S.bKey = null; S.P = null; S.owners = {}; S.claims = new Set(); S.gameId = null;
+  S.viewBoard = false; S.viewIdx = null;
+}
 
 async function createRoom(){
   if (!HAS_PEER || S.busy) return;
@@ -2522,10 +2700,12 @@ async function createRoom(){
   }
   setBusy(false);
   if (!p){ toast("No se pudo crear la sala. Revisá tu conexión y probá de nuevo."); return; }
-  PEER = p; S.code = code;
-  S.mode = "host"; S.game = { st: "wait", dur: 600 }; S.rivalHere = false; S.rivalName = ""; S.owners = {}; S.seq = 0;
+  PEER = p; S.code = code; S.role = "host";
+  resetRoomState();
+  S.players = [{ uid: UID, name: S.name, col: S.color, here: true }];
+  S.rm = [null];
   p.on("connection", hostOnConnection);
-  showScreen("wait"); renderWait();
+  applyColors(); renderAll();
 }
 
 async function joinRoom(raw){
@@ -2537,150 +2717,264 @@ async function joinRoom(raw){
   try { p = await openPeer(null); } catch(e){}
   setBusy(false);
   if (!p){ toast("No se pudo conectar. Revisá tu conexión y probá de nuevo."); return; }
-  PEER = p; S.code = code; S.mode = "guest"; S.game = { st: "wait" }; S.hostSeen = false; S.claims = new Set(); S.owners = {}; S.rivalName = "";
+  PEER = p; S.code = code; S.role = "guest";
+  resetRoomState(); S.hostSeen = false; S.seenNo = -1;
   const conn = p.connect(ID_PREFIX + code.toLowerCase(), { reliable: true, serialization: "json" });
   CONN = conn;
-  conn.on("open", () => publishGuest());
+  conn.on("open", () => send({ t: "hi", uid: UID, name: S.name, col: S.color }));
   conn.on("data", d => { if (CONN === conn) guestOnData(d); });
   conn.on("close", () => { if (CONN === conn) hostGone(); });
   conn.on("error", () => {});
   showScreen("wait"); renderWait();
-  S.joinTimer = setTimeout(() => { if (!S.hostSeen && S.mode === "guest" && CONN === conn){ leaveRoom(); toast("No encontramos la sala " + code + ". Revisá el código o pedile un link nuevo."); } }, 15000);
+  S.joinTimer = setTimeout(() => { if (!S.hostSeen && S.role === "guest" && CONN === conn){ leaveRoom(); toast("No encontramos la sala " + code + ". Revisá el código o pedile un link nuevo."); } }, 15000);
 }
 
 function leaveRoom(){
   clearTimeout(S.joinTimer);
+  if (S.role === "host"){
+    for (const conn of GUESTS.keys()){ try { if (conn.open) conn.send({ t: "bye" }); } catch(e){} const c = conn; setTimeout(() => { try { c.close(); } catch(e){} }, 150); }
+    GUESTS.clear();
+  }
   const c = CONN, p = PEER;
   CONN = null; PEER = null;
   if (c){ try { if (c.open) c.send({ t: "bye" }); } catch(e){} setTimeout(() => { try { c.close(); } catch(e){} }, 150); }
   if (p) setTimeout(() => { try { p.destroy(); } catch(e){} }, 300);
-  S.mode = null; S.game = null; S.P = null; S.rivalHere = false; S.claims = new Set(); S.owners = {};
+  S.role = null; resetRoomState(); S.players = []; S.game = null;
+  applyColors();
   showScreen("lobby");
 }
 
 /* ---------- Anfitrión ---------- */
 function hostOnConnection(conn){
-  if (CONN && CONN.open){
-    conn.on("open", () => { try { conn.send({ t: "full" }); } catch(e){} setTimeout(() => { try { conn.close(); } catch(e){} }, 600); });
-    return;
-  }
-  CONN = conn;
-  conn.on("open", () => { if (CONN === conn) publishHost(); });
-  conn.on("data", d => { if (CONN === conn) hostOnData(d); });
-  conn.on("close", () => { if (CONN === conn) hostRivalLeft(); });
+  conn.on("data", d => hostOnData(conn, d));
+  conn.on("close", () => hostDrop(conn));
   conn.on("error", () => {});
 }
-function hostOnData(d){
-  if (!d || typeof d !== "object") return;
-  if (d.t === "bye"){ hostRivalLeft(); return; }
-  if (d.t !== "g") return;
-  const was = S.rivalHere;
-  S.rivalHere = true;
-  S.rivalName = cleanName(d.name) || "Rival";
-  let changed = !was;
-  if (S.P && S.game && S.game.st === "play" && d.gid === S.game.id && Array.isArray(d.claims)){
-    for (const idx of d.claims){
-      if (Number.isInteger(idx) && idx >= 0 && idx < S.P.words.length && !S.owners[idx]){
-        S.owners[idx] = { p: "g", n: ++S.seq }; changed = true;
-      }
+function hostOnData(conn, d){
+  if (!d || typeof d !== "object" || S.role !== "host") return;
+  if (d.t === "hi"){
+    const uid = typeof d.uid === "string" ? d.uid.slice(0, 40) : "";
+    if (!uid) return;
+    let idx = S.players.findIndex(p => p.uid === uid);
+    if (idx < 0){
+      const refuse = (t) => { try { conn.send({ t }); } catch(e){} setTimeout(() => { try { conn.close(); } catch(e){} }, 600); };
+      if (playing()) return refuse("busy");
+      if (S.players.filter(p => p.here).length >= MAX_PLAYERS) return refuse("full");
+      S.players.push({ uid, name: cleanName(d.name) || "Jugador", col: validColor(d.col) ? d.col : "naranja", here: true, late: S.game.st === "end" });
+      S.rm.push(null); S.scores.push(zeroScore());
+      idx = S.players.length - 1;
+      toast(pname(idx) + " entró a la sala");
+    } else {
+      // vuelve alguien que ya estaba (recargó o se le cortó)
+      for (const [c, u] of GUESTS) if (u === uid && c !== conn){ GUESTS.delete(c); try { c.close(); } catch(e){} }
+      const p = S.players[idx]; p.here = true; p.name = cleanName(d.name) || p.name; if (validColor(d.col)) p.col = d.col;
+      if (playing()) toast(p.name + " volvió");
+    }
+    GUESTS.set(conn, uid);
+    applyColors(); publishAll(); return;
+  }
+  const uid = GUESTS.get(conn); if (!uid) return;
+  const idx = S.players.findIndex(p => p.uid === uid); if (idx < 0) return;
+  if (d.t === "c") hostClaim(idx, d.gid, d.bk, d.w);
+  else if (d.t === "rm") hostRematch(idx, d.v);
+  else if (d.t === "bye") hostDrop(conn);
+}
+function hostDrop(conn){
+  const uid = GUESTS.get(conn); if (uid === undefined) return;
+  GUESTS.delete(conn);
+  for (const u of GUESTS.values()) if (u === uid) return; // tiene otra conexión abierta
+  const idx = S.players.findIndex(p => p.uid === uid); if (idx < 0) return;
+  const name = pname(idx);
+  if (S.game.st === "wait"){
+    S.players.splice(idx, 1); S.rm.splice(idx, 1); S.scores.splice(idx, 1);
+  } else {
+    S.players[idx].here = false; S.rm[idx] = null;
+    if (playing()) toast(name + " se desconectó. Puede volver con el mismo link."); else toast(name + " se fue");
+  }
+  applyColors(); publishAll();
+  if (S.game.st === "end") maybeRematch();
+}
+function payload(){
+  return {
+    t: "s", code: S.code,
+    players: S.players.map(p => ({ n: p.name, c: p.col, h: p.here, l: !!p.late })),
+    cfg: S.cfg, game: S.game,
+    boards: S.boards.map(b => ({ k: b.key, s: b.seed, o: Object.keys(b.own).map(w => [+w, b.own[w].p, b.own[w].n]) })),
+    scores: S.scores, rm: S.rm, rmNo: S.rmNo
+  };
+}
+function publishAll(){
+  if (S.role === "host"){
+    const base = payload();
+    for (const [conn, uid] of GUESTS){
+      if (!conn.open) continue;
+      const you = S.players.findIndex(p => p.uid === uid);
+      try { conn.send(Object.assign({ you }, base)); } catch(e){}
     }
   }
-  if (changed){ publishHost(); checkAllOwned(); }
-  if (!was && S.screen === "game") toast(S.rivalName + " está en la sala");
-  rerender();
+  renderAll();
 }
-function hostRivalLeft(){
-  const c = CONN; CONN = null;
-  if (c) setTimeout(() => { try { c.close(); } catch(e){} }, 100);
-  if (!S.rivalHere) return;
-  S.rivalHere = false;
-  if (S.screen === "game" && S.game && S.game.st !== "end") toast((S.rivalName || "Tu rival") + " se desconectó. Puede volver con el mismo link.");
-  rerender();
-}
-function publishHost(){
-  if (S.mode !== "host") return;
-  const gm = S.game.st === "wait" ? { st: "wait" } : { id: S.game.id, seed: S.game.seed, dur: S.game.dur, st: S.game.st, t: S.game.t };
-  const own = Object.keys(S.owners).map(k => [+k, S.owners[k].p, S.owners[k].n]);
-  send({ t: "s", name: S.name, game: gm, own });
-}
+const newBoard = () => { const b = { key: rid(), seed: randSeed(), own: {} }; puzzle(b.seed); return b; };
 function hostStart(){
-  if (!S.rivalHere) return;
-  S.game = { id: rid(), seed: randSeed(), dur: S.game.dur || 600, st: "cd", t: 3 };
-  S.owners = {}; S.seq = 0;
-  loadPuzzle(); S.cdEnd = Date.now() + 3000;
-  publishHost();
-  showScreen("game"); renderGame();
+  if (!isHostLike()) return;
+  if (S.role === "host"){
+    // los que se fueron no siguen en la próxima partida
+    const keep = S.players.map((p, i) => p.here ? i : -1).filter(i => i >= 0);
+    S.players = keep.map(i => Object.assign(S.players[i], { late: false }));
+    S.me = S.players.findIndex(p => p.uid === UID);
+    if (S.players.length < 2){ toast("Hacen falta al menos 2 jugadores."); publishAll(); return; }
+  }
+  const n = S.players.length;
+  const mode = S.role === "solo" ? "mismo" : S.cfg.mode;
+  S.game = { id: rid(), mode, dur: S.cfg.dur, st: "cd", t: 3, rot: 0, rotT: ROT_SECS };
+  S.boards = mode === "rotacion" ? Array.from({ length: n }, newBoard) : [newBoard()];
+  S.scores = Array.from({ length: n }, zeroScore);
+  S.rm = Array(n).fill(null); S.rmNo = null; S.seq = 0;
+  S.cdEnd = Date.now() + 3000;
+  applyColors(); publishAll();
 }
-function checkAllOwned(){
-  if (!S.P || !S.game || S.game.st !== "play") return;
-  if (Object.keys(S.owners).length >= S.P.words.length){ S.game.st = "end"; publishHost(); renderGame(); }
+function hostClaim(idx, gid, bk, w){
+  if (!S.game || S.game.st !== "play" || gid !== S.game.id) return;
+  const bi = S.boards.findIndex(b => b.key === bk); if (bi < 0) return;
+  if (S.game.mode === "rotacion" && boardIndexFor(idx) !== bi) return;
+  const b = S.boards[bi], P = puzzle(b.seed);
+  if (!Number.isInteger(w) || w < 0 || w >= P.words.length || b.own[w]) return;
+  b.own[w] = { p: idx, n: ++S.seq };
+  const sc = S.scores[idx]; sc.pts += P.words[w].pts; sc.words++; sc.last = S.seq;
+  if (Object.keys(b.own).length >= P.words.length){
+    if (S.game.mode === "rotacion") S.boards[bi] = newBoard();   // tablero completo: llega uno nuevo
+    else S.game.st = "end";
+  }
+  publishAll();
+}
+/* Revancha: arranca cuando todos los que siguen en la sala dicen que sí */
+function hostRematch(idx, v){
+  if (!S.game || S.game.st !== "end") return;
+  if (v === "ask") S.rm[idx] = true;
+  else if (v === "cancel") S.rm[idx] = null;
+  else if (v === "no"){
+    S.rm = S.rm.map(x => x === true ? null : x); S.rm[idx] = false;
+    S.rmNo = { by: idx, n: ((S.rmNo && S.rmNo.n) || 0) + 1 };
+    if (idx !== S.me) toast(pname(idx) + " no quiere otra partida");
+  }
+  if (!maybeRematch()) publishAll();
+}
+function maybeRematch(){
+  const here = S.players.map((p, i) => p.here ? i : -1).filter(i => i >= 0);
+  if (here.length >= 2 && here.every(i => S.rm[i] === true)){ hostStart(); return true; }
+  return false;
+}
+function hostBackToRoom(){
+  if (S.role !== "host") return;
+  const keep = S.players.filter(p => p.here).map(p => Object.assign(p, { late: false }));
+  S.players = keep; S.me = S.players.findIndex(p => p.uid === UID);
+  S.game = { st: "wait" }; S.boards = []; S.scores = S.players.map(zeroScore); S.rm = S.players.map(() => null); S.rmNo = null;
+  applyColors(); publishAll();
 }
 function tick(){
-  if (!(S.mode === "host" || S.mode === "solo") || !S.game || !S.game.id) return;
-  const now = Date.now(); let t = S.game.t, st = S.game.st;
-  if (st === "cd"){ t = Math.ceil((S.cdEnd - now) / 1000); if (t <= 0){ st = "play"; S.playEnd = now + S.game.dur*1000; t = S.game.dur; } }
-  else if (st === "play"){ t = Math.max(0, Math.ceil((S.playEnd - now) / 1000)); if (t <= 0) st = "end"; }
-  if (t !== S.game.t || st !== S.game.st){ S.game.t = t; S.game.st = st; publishHost(); if (S.screen === "game") renderGame(); }
+  if (!isHostLike() || !S.game || !S.game.id) return;
+  const g = S.game, now = Date.now();
+  let t = g.t, st = g.st, rot = g.rot, rotT = g.rotT;
+  if (st === "cd"){ t = Math.ceil((S.cdEnd - now) / 1000); if (t <= 0){ st = "play"; S.playStart = now; S.playEnd = now + g.dur * 1000; t = g.dur; } }
+  else if (st === "play"){
+    t = Math.max(0, Math.ceil((S.playEnd - now) / 1000));
+    if (t <= 0) st = "end";
+    if (g.mode === "rotacion"){
+      const el = now - S.playStart;
+      rot = Math.floor(el / (ROT_SECS * 1000));
+      rotT = Math.ceil((ROT_SECS * 1000 - (el % (ROT_SECS * 1000))) / 1000);
+    }
+  }
+  if (t !== g.t || st !== g.st || rot !== g.rot || rotT !== g.rotT){ g.t = t; g.st = st; g.rot = rot; g.rotT = rotT; publishAll(); }
 }
 setInterval(tick, 200);
 
 /* ---------- Invitado ---------- */
-function publishGuest(){
-  if (S.mode !== "guest") return;
-  send({ t: "g", name: S.name, gid: (S.game && S.game.id) || null, claims: Array.from(S.claims) });
-}
 function guestOnData(d){
   if (!d || typeof d !== "object") return;
-  if (d.t === "full"){ leaveRoom(); toast("Esa sala ya tiene dos jugadores."); return; }
+  if (d.t === "full"){ leaveRoom(); toast("La sala ya tiene " + MAX_PLAYERS + " jugadores."); return; }
+  if (d.t === "busy"){ leaveRoom(); toast("La partida ya empezó. Esperá a que termine y volvé a entrar con el link."); return; }
   if (d.t === "bye"){ hostGone(); return; }
   if (d.t !== "s") return;
   if (!S.hostSeen){ S.hostSeen = true; clearTimeout(S.joinTimer); }
-  S.rivalName = cleanName(d.name) || "Rival"; S.rivalHere = true;
-  const gm = d.game || {};
-  if (gm.st === "wait" || typeof gm.id !== "string"){
-    S.game = { st: "wait" };
-    if (S.screen !== "wait") showScreen("wait");
-    renderWait(); return;
-  }
-  let claimsChanged = false;
-  if (!S.game || gm.id !== S.game.id){
-    S.game = { id: gm.id, seed: (gm.seed >>> 0), dur: +gm.dur || 600, st: gm.st, t: +gm.t || 0 };
-    S.owners = {}; S.claims = new Set(); claimsChanged = true;
-    loadPuzzle(); showScreen("game");
-  } else { S.game.st = gm.st; S.game.t = +gm.t || 0; }
-  const own = {};
-  if (Array.isArray(d.own)) for (const e of d.own){
-    if (Array.isArray(e) && Number.isInteger(e[0]) && e[0] >= 0 && e[0] < S.P.words.length && (e[1] === "h" || e[1] === "g")) own[e[0]] = { p: e[1], n: +e[2] || 0 };
-  }
-  for (const idx of Array.from(S.claims)){
-    if (own[idx]){ S.claims.delete(idx); claimsChanged = true; if (own[idx].p === "h") toast(S.rivalName + " completó " + S.P.words[idx].ans + " antes que vos"); }
-  }
-  S.owners = own;
-  if (claimsChanged) publishGuest();
-  renderGame();
+  const players = Array.isArray(d.players) ? d.players.slice(0, MAX_PLAYERS) : [];
+  S.players = players.map(p => ({ name: cleanName(p && p.n) || "Jugador", col: validColor(p && p.c) ? p.c : "naranja", here: !!(p && p.h), late: !!(p && p.l) }));
+  S.me = Number.isInteger(d.you) && d.you >= 0 && d.you < S.players.length ? d.you : 0;
+  S.cfg = { mode: d.cfg && d.cfg.mode === "rotacion" ? "rotacion" : "mismo", dur: [300, 600, 900].includes(d.cfg && d.cfg.dur) ? d.cfg.dur : 600 };
+  const g = d.game && typeof d.game === "object" ? d.game : { st: "wait" };
+  S.game = { id: typeof g.id === "string" ? g.id : null, mode: g.mode === "rotacion" ? "rotacion" : "mismo", dur: +g.dur || 600,
+    st: ["wait", "cd", "play", "end"].includes(g.st) ? g.st : "wait", t: +g.t || 0, rot: +g.rot || 0, rotT: +g.rotT || 0 };
+  S.boards = (Array.isArray(d.boards) ? d.boards : []).slice(0, MAX_PLAYERS).map(b => {
+    const own = {};
+    if (Array.isArray(b && b.o)) for (const e of b.o) if (Array.isArray(e) && Number.isInteger(e[0]) && Number.isInteger(e[1])) own[e[0]] = { p: e[1], n: +e[2] || 0 };
+    return { key: String(b && b.k), seed: (b && b.s) >>> 0, own };
+  });
+  S.scores = S.players.map((_, i) => { const x = Array.isArray(d.scores) && d.scores[i] || {}; return { pts: +x.pts || 0, words: +x.words || 0, last: +x.last || 0 }; });
+  S.rm = S.players.map((_, i) => Array.isArray(d.rm) && (d.rm[i] === true || d.rm[i] === false) ? d.rm[i] : null);
+  const no = d.rmNo && typeof d.rmNo === "object" ? d.rmNo : null;
+  if (no && no.n > S.seenNo && S.seenNo !== -1 && no.by !== S.me && S.game.st === "end") toast(pname(no.by) + " no quiere otra partida");
+  S.rmNo = no; S.seenNo = no ? no.n : 0;
+  applyColors(); renderAll();
 }
 function hostGone(){
-  if (S.mode !== "guest") return;
-  const name = S.rivalName || "Tu rival";
-  const seen = S.hostSeen;
+  if (S.role !== "guest") return;
+  const seen = S.hostSeen, host = pname(0);
   leaveRoom();
-  toast(seen ? name + " cerró la sala o se desconectó." : "No se pudo entrar a la sala.");
+  toast(seen ? host + " cerró la sala o se desconectó." : "No se pudo entrar a la sala.");
+}
+function rematch(v){
+  if (isHostLike()) hostRematch(S.me, v);
+  else if (S.role === "guest" && S.game && S.game.st === "end"){
+    send({ t: "rm", v });
+    if (v === "ask") S.rm[S.me] = true; else if (v === "cancel") S.rm[S.me] = null; else if (v === "no"){ S.rm = S.rm.map(x => x === true ? null : x); S.rm[S.me] = false; }
+    renderAll();
+  }
 }
 
 /* ---------- Solo ---------- */
 function startSolo(){
-  S.mode = "solo"; S.rivalName = ""; S.owners = {}; S.seq = 0; S.claims = new Set();
-  S.game = { id: rid(), seed: randSeed(), dur: 600, st: "cd", t: 3 };
-  loadPuzzle(); S.cdEnd = Date.now() + 3000;
-  showScreen("game"); renderGame();
+  S.role = "solo"; resetRoomState();
+  S.players = [{ uid: UID, name: S.name, col: S.color, here: true }]; S.me = 0;
+  S.cfg = { mode: "mismo", dur: 600 };
+  applyColors(); hostStart();
 }
 
-function rerender(){ if (S.screen === "wait") renderWait(); else if (S.screen === "game") renderGame(); }
+/* ---------- Vista: qué pantalla y qué tablero ---------- */
+function renderAll(){
+  if (!S.role) return;
+  if (!S.game || S.game.st === "wait"){
+    if (S.screen !== "wait") showScreen("wait");
+    renderWait(); return;
+  }
+  if (S.game.id !== S.gameId){ S.gameId = S.game.id; S.bKey = null; S.bIdx = -1; S.viewBoard = false; S.viewIdx = null; }
+  syncBoard();
+  if (S.screen !== "game") showScreen("game");
+  renderGame();
+}
+function syncBoard(){
+  const g = S.game, ended = g.st === "end";
+  const bi = ended && S.viewIdx != null && S.viewIdx < S.boards.length ? S.viewIdx : boardIndexFor(S.me);
+  const b = S.boards[bi]; if (!b) return;
+  if (b.key !== S.bKey){
+    if (S.bKey && g.st === "play" && g.mode === "rotacion"){
+      if (bi !== S.bIdx) toast("¡Giró! Ahora tenés el tablero de " + pname(bi) + ".");
+      else toast("Se completó este tablero: te toca uno nuevo.");
+    }
+    S.bKey = b.key; S.bIdx = bi;
+    loadPuzzle(b.seed);
+  }
+  S.owners = b.own;
+  for (const w of Array.from(S.claims)){
+    const o = S.owners[w];
+    if (o){ S.claims.delete(w); if (o.p !== S.me) toast(pname(o.p) + " completó " + S.P.words[w].ans + " antes que vos"); }
+  }
+}
 
 /* ---------- Tablero ---------- */
-function loadPuzzle(){
-  S.P = generate(S.game.seed);
+function loadPuzzle(seed){
+  S.P = puzzle(seed);
   S.entries = Array.from({length: S.P.rows}, () => Array(S.P.cols).fill(""));
+  S.claims = new Set();
   const w0 = S.P.words[0];
   S.sel = { r: w0.cells[0][0], c: w0.cells[0][1], dir: w0.dir };
   buildBoard();
@@ -2699,7 +2993,7 @@ function buildBoard(){
       d.className = "cell"; d.dataset.r = r; d.dataset.c = c; d.setAttribute("role", "gridcell");
       if (P.num[r][c]){ const n = document.createElement("span"); n.className = "n"; n.textContent = P.num[r][c]; d.append(n); }
       const l = document.createElement("span"); l.className = "l"; d.append(l);
-      row.push({ el: d, l }); bd.append(d);
+      row.push({ el: d, l, k: "" }); bd.append(d);
     }
     cellEls.push(row);
   }
@@ -2710,8 +3004,10 @@ function buildBoard(){
       const bt = document.createElement("button");
       const nm = document.createElement("span"); nm.className = "num"; nm.textContent = w.num;
       const cl = document.createElement("span"); cl.className = "cl"; cl.textContent = w.clue;
+      const sol = document.createElement("span"); sol.className = "sol"; sol.textContent = w.ans; cl.append(sol);
       const ln = document.createElement("span"); ln.className = "len"; ln.textContent = "(" + w.ans.length + ")";
-      bt.append(nm, cl, ln);
+      const pp = document.createElement("span"); pp.className = "pp d" + w.d; pp.textContent = w.pts; pp.title = "Pista " + DIFF_NAME[w.d] + ": " + w.pts + " puntos";
+      bt.append(nm, cl, ln, pp);
       bt.addEventListener("click", () => selectWord(w.id));
       li.append(bt); ol.append(li);
     }
@@ -2720,6 +3016,8 @@ function buildBoard(){
 function ownerOf(id){ return S.owners[id] ? S.owners[id].p : null; }
 function isLockedWord(id){ return id >= 0 && (!!S.owners[id] || S.claims.has(id)); }
 function isLockedCell(r, c){ const cw = S.P.cw[r][c]; return isLockedWord(cw.a) || isLockedWord(cw.d); }
+/* La N vale como Ñ (y al revés): al completar la palabra se muestra la letra correcta */
+function sameLetter(a, b){ return a === b || (a === "N" && b === "Ñ") || (a === "Ñ" && b === "N"); }
 function letterAt(r, c){ return isLockedCell(r, c) ? S.P.sol[r][c] : S.entries[r][c]; }
 function curWord(){ if (!S.sel) return null; const cw = S.P.cw[S.sel.r][S.sel.c]; const id = cw[S.sel.dir]; return id >= 0 ? S.P.words[id] : null; }
 
@@ -2735,20 +3033,60 @@ function revealClue(w){
     box.scrollTo({ top: Math.max(0, top - box.clientHeight / 3), behavior: smooth ? "smooth" : "auto" });
   }
 }
+function ranking(){
+  return S.players.map((p, i) => ({ i, p, s: S.scores[i] || zeroScore() }))
+    .filter(x => !x.p.late)
+    .sort((a, b) => b.s.pts - a.s.pts || (a.s.last || Infinity) - (b.s.last || Infinity) || a.i - b.i);
+}
+function renderScore(){
+  const me = S.me, solo = S.role === "solo", g = S.game;
+  const mine = S.scores[me] || zeroScore();
+  $("nmMe").textContent = S.name + " (vos)";
+  $("ptsMe").textContent = mine.pts;
+  $("wcMe").textContent = plural(mine.words, "palabra", "palabras");
+  const others = S.players.map((p, i) => i).filter(i => i !== me && !S.players[i].late);
+  const big = solo || others.length === 1;
+  $("rvSide").hidden = !big; $("others").hidden = big;
+  if (solo){
+    $("nmRv").textContent = "Faltan"; $("rvSide").style.removeProperty("--rival");
+    $("ptsRv").textContent = S.P ? S.P.words.length - Object.keys(S.owners).length : 0; $("wcRv").textContent = "palabras";
+  } else if (big){
+    const i = others[0], s = S.scores[i] || zeroScore();
+    $("nmRv").textContent = pname(i) + (S.players[i].here ? "" : " · desconectado");
+    $("rvSide").style.setProperty("--rival", pc(i));
+    $("ptsRv").textContent = s.pts; $("wcRv").textContent = plural(s.words, "palabra", "palabras");
+  } else {
+    const ol = $("others"); ol.textContent = "";
+    for (const i of others.sort((a, b) => (S.scores[b] || zeroScore()).pts - (S.scores[a] || zeroScore()).pts)){
+      const li = document.createElement("li"); li.style.setProperty("--pc", pc(i)); li.classList.toggle("gone", !S.players[i].here);
+      const dot = document.createElement("span"); dot.className = "dot pc";
+      const nm = document.createElement("span"); nm.className = "on"; nm.textContent = pname(i);
+      const pt = document.createElement("span"); pt.className = "op"; pt.textContent = (S.scores[i] || zeroScore()).pts;
+      li.append(dot, nm, pt); ol.append(li);
+    }
+  }
+  const st = g.st, clock = $("clock");
+  clock.firstChild.nodeValue = st === "cd" ? fmt(g.dur) : fmt(g.t);
+  $("clockSub").textContent = st === "end" ? "terminado" : st === "cd" ? "por empezar" : "restante";
+  clock.classList.toggle("low", st === "play" && g.t <= 30);
+  // Rotación: de quién es el tablero y cuánto falta para el giro
+  const rot = g.mode === "rotacion" && !solo;
+  $("boardTag").hidden = !rot;
+  if (rot){
+    const who = $("boardWho"); who.textContent = "";
+    const dot = document.createElement("span"); dot.className = "dot pc"; dot.style.setProperty("--pc", pc(S.bIdx));
+    who.append(dot, document.createTextNode("Tablero de " + (S.bIdx === me ? "vos" : pname(S.bIdx))));
+    const left = st === "play" ? g.rotT : ROT_SECS, lastRound = st === "play" && g.t <= g.rotT;
+    $("rotFill").style.width = (st === "end" ? 0 : (left / ROT_SECS) * 100) + "%";
+    $("rotBar").classList.toggle("soon", st === "play" && left <= 10 && !lastRound);
+    $("rotBar").hidden = st === "end";
+    $("rotTxt").textContent = st === "end" ? "" : st === "cd" ? "gira cada 1:30" : lastRound ? "último tablero" : "gira en " + fmt(left);
+  }
+}
 function renderGame(){
   if (!S.P || !S.game) return;
-  const me = myKey(), solo = S.mode === "solo";
-  let mine = 0, theirs = 0;
-  for (const k in S.owners){ if (S.owners[k].p === me) mine++; else theirs++; }
-  $("nmMe").textContent = S.name + " (vos)";
-  $("ptsMe").textContent = mine;
-  $("nmRv").textContent = solo ? "Faltan" : (S.rivalName || "Rival") + (S.rivalHere ? "" : " · desconectado");
-  $("ptsRv").textContent = solo ? (S.P.words.length - mine) : theirs;
-  const st = S.game.st;
-  const clock = $("clock");
-  clock.firstChild.nodeValue = st === "cd" ? fmt(S.game.dur) : fmt(S.game.t);
-  $("clockSub").textContent = st === "end" ? "terminado" : st === "cd" ? "por empezar" : "restante";
-  clock.classList.toggle("low", st === "play" && S.game.t <= 30);
+  const me = S.me, st = S.game.st, ended = st === "end";
+  renderScore();
   $("cdOverlay").hidden = !(st === "cd" && S.screen === "game");
   $("cdNum").textContent = Math.max(1, S.game.t);
 
@@ -2758,33 +3096,64 @@ function renderGame(){
     const ce = cellEls[r][c]; if (!ce) continue;
     const cw = S.P.cw[r][c];
     const oa = cw.a >= 0 ? ownerOf(cw.a) : null, od = cw.d >= 0 ? ownerOf(cw.d) : null;
-    const hasMe = oa === me || od === me, hasRv = (oa && oa !== me) || (od && od !== me);
-    const pend = !hasMe && !hasRv && (S.claims.has(cw.a) || S.claims.has(cw.d));
-    const el = ce.el;
-    el.classList.toggle("own-split", hasMe && hasRv);
-    el.classList.toggle("own-me", hasMe && !hasRv);
-    el.classList.toggle("own-rv", hasRv && !hasMe);
+    const owners = [...new Set([oa, od].filter(x => x !== null))];
+    const pend = !owners.length && (S.claims.has(cw.a) || S.claims.has(cw.d));
+    const el = ce.el, key = owners.join(",");
+    if (ce.k !== key){
+      ce.k = key;
+      el.classList.toggle("own", owners.length === 1); el.classList.toggle("own2", owners.length === 2);
+      if (owners.length) el.style.setProperty("--oc", pcs(owners[0])); else el.style.removeProperty("--oc");
+      if (owners.length === 2) el.style.setProperty("--oc2", pcs(owners[1])); else el.style.removeProperty("--oc2");
+    }
     el.classList.toggle("pend", pend);
     el.classList.toggle("sel", !!S.sel && S.sel.r === r && S.sel.c === c);
     el.classList.toggle("inword", inWord.has(r + "," + c));
-    ce.l.textContent = letterAt(r, c);
+    const reveal = ended && !owners.length;
+    el.classList.toggle("reveal", reveal);
+    ce.l.textContent = reveal ? S.P.sol[r][c] : letterAt(r, c);
   }
   if (w){
     const o = ownerOf(w.id);
-    $("clueTag").textContent = w.num + " " + (w.dir === "a" ? "Horizontal" : "Vertical") + " · " + w.ans.length + " letras" + (o ? (o === me ? " · tuya" : " · de " + (S.rivalName || "tu rival")) : "");
+    $("clueTag").textContent = w.num + " " + (w.dir === "a" ? "Horizontal" : "Vertical") + " · " + w.ans.length + " letras · " + DIFF_NAME[w.d] + " · " + w.pts + " pts" + (o !== null ? (o === me ? " · tuya" : " · de " + pname(o)) : "");
     $("clueQ").textContent = w.clue;
   }
-  const left = { a: 0, d: 0 }, tot = { a: 0, d: 0 };
+  const left = { a: 0, d: 0 };
   document.querySelectorAll(".clues li").forEach(li => {
     const id = +li.dataset.w, o = ownerOf(id), dir = S.P.words[id].dir;
-    li.classList.toggle("me", o === me); li.classList.toggle("rv", !!o && o !== me);
+    li.classList.toggle("own", o !== null);
+    if (o !== null) li.style.setProperty("--oc", pc(o)); else li.style.removeProperty("--oc");
     li.classList.toggle("active", !!w && w.id === id);
-    tot[dir]++; if (!o) left[dir]++;
+    if (o === null) left[dir]++;
   });
   $("cntA").textContent = left.a ? "faltan " + left.a : "completas";
   $("cntD").textContent = left.d ? "faltan " + left.d : "completas";
   if (w && w.id !== lastActive){ lastActive = w.id; revealClue(w); }
-  if (st === "end") showResult(); else $("resOverlay").hidden = true;
+  document.querySelector(".clues").classList.toggle("ended", ended);
+  if (ended && !S.viewBoard) showResult(); else $("resOverlay").hidden = true;
+  $("endBar").hidden = !(ended && S.viewBoard);
+  $("kbd").hidden = ended;
+  if (ended && S.viewBoard) renderEndBar();
+}
+function renderEndBar(){
+  const missing = S.P.words.filter(x => !S.owners[x.id]).length;
+  const askers = S.rm.map((v, i) => v === true && i !== S.me ? i : -1).filter(i => i >= 0);
+  const asked = S.role !== "solo" && askers.length && S.rm[S.me] !== true;
+  $("endBar").classList.toggle("asked", !!asked);
+  const t = $("endTxt"); t.textContent = asked ? listNames(askers.map(pname)) + (askers.length > 1 ? " quieren" : " quiere") + " otra partida" : "Partida terminada";
+  const sm = document.createElement("small");
+  const who = S.role === "solo" ? "no completaste" : "nadie completó";
+  sm.textContent = !missing ? "Se completaron todas las palabras." : missing === 1 ? "En rojo, la palabra que " + who + "." : "En rojo, las " + missing + " palabras que " + who + ".";
+  t.append(sm);
+  // en Rotación se puede mirar cada tablero
+  const bs = $("bsel"); bs.textContent = "";
+  bs.hidden = !(S.game.mode === "rotacion" && S.boards.length > 1);
+  if (!bs.hidden) S.boards.forEach((_, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(i === S.bIdx));
+    const dot = document.createElement("span"); dot.className = "dot pc"; dot.style.setProperty("--pc", pc(i));
+    b.append(dot, document.createTextNode(i === S.me ? "El tuyo" : pname(i)));
+    b.addEventListener("click", () => { S.viewIdx = i; renderAll(); });
+    bs.append(b);
+  });
 }
 
 /* ---------- Selección e input ---------- */
@@ -2844,12 +3213,12 @@ function checkAt(r, c){
     const id = cw[dir]; if (id < 0 || isLockedWord(id)) continue;
     const w = S.P.words[id];
     if (!w.cells.every(([rr, cc]) => letterAt(rr, cc))) continue;
-    if (w.cells.every(([rr, cc]) => letterAt(rr, cc) === S.P.sol[rr][cc])){ claim(id); claimed = true; }
+    if (w.cells.every(([rr, cc]) => sameLetter(letterAt(rr, cc), S.P.sol[rr][cc]))){ claim(id); claimed = true; }
     else {
       w.cells.forEach(([rr, cc]) => { const e = cellEls[rr][cc].el; e.classList.remove("bad"); void e.offsetWidth; e.classList.add("bad"); setTimeout(() => e.classList.remove("bad"), 600); });
     }
   }
-  if (claimed){
+  if (claimed && S.P){
     const cur = curWord();
     if (!cur || isLockedWord(cur.id)) stepWord(1);
     renderGame();
@@ -2858,10 +3227,9 @@ function checkAt(r, c){
 }
 function claim(id){
   const w = S.P.words[id];
-  if (S.mode === "guest"){ S.claims.add(id); publishGuest(); }
-  else { S.owners[id] = { p: "h", n: ++S.seq }; publishHost(); }
   w.cells.forEach(([rr, cc]) => { const e = cellEls[rr][cc].el; e.classList.remove("flash"); void e.offsetWidth; e.classList.add("flash"); });
-  if (S.mode !== "guest") checkAllOwned();
+  if (S.role === "guest"){ S.claims.add(id); send({ t: "c", gid: S.game.id, bk: S.bKey, w: id }); }
+  else hostClaim(S.me, S.game.id, S.bKey, id);
 }
 
 $("board").addEventListener("pointerdown", e => {
@@ -2916,27 +3284,39 @@ document.addEventListener("keydown", e => {
 
 /* ---------- Sala de espera ---------- */
 function renderWait(){
-  const host = S.mode === "host";
+  const host = S.role === "host";
   $("waitCode").textContent = S.code || "····";
-  $("waitMe").textContent = S.name + " (vos)" + (host ? " · anfitrión" : "");
-  $("hostOpts").hidden = !host;
-  $("btnStart").hidden = !host;
-  $("btnStart").disabled = !S.rivalHere;
-  $("shareRow").hidden = !host;
-  if (host){
-    $("waitHelp").textContent = S.rivalHere ? "Tu rival ya está en la sala. Elegí la duración y empezá." : "Mandale el link a tu rival. Al abrirlo entra directo a esta sala. Dejá esta pantalla abierta mientras esperás.";
-    $("waitRv").textContent = S.rivalHere ? S.rivalName : "Esperando rival…";
-  } else {
-    $("waitHelp").textContent = S.hostSeen ? "Estás adentro. Cuando " + S.rivalName + " empiece, arranca la cuenta regresiva." : "Buscando la sala…";
-    $("waitRv").textContent = S.hostSeen ? S.rivalName + " · anfitrión" : "Buscando anfitrión…";
+  const list = $("playerList"); list.textContent = "";
+  if (!S.players.length){
+    const row = document.createElement("div"); row.className = "player";
+    const dot = document.createElement("span"); dot.className = "dot off";
+    row.append(dot, document.createTextNode("Buscando la sala…")); list.append(row);
   }
-  $("waitRvDot").className = "dot " + ((host ? S.rivalHere : S.hostSeen) ? "rv" : "off");
-  const dur = (S.game && S.game.dur) || 600;
-  document.querySelectorAll("#durChips .chip").forEach(ch => ch.setAttribute("aria-pressed", String(+ch.dataset.dur === dur)));
+  S.players.forEach((p, i) => {
+    const row = document.createElement("div"); row.className = "player";
+    const dot = document.createElement("span"); dot.className = "dot pc"; dot.style.setProperty("--pc", pc(i));
+    const nm = document.createElement(i === S.me ? "strong" : "span"); nm.textContent = p.name + (i === S.me ? " (vos)" : "");
+    row.append(dot, nm);
+    if (i === 0){ const t = document.createElement("span"); t.className = "ptag"; t.textContent = "anfitrión"; row.append(t); }
+    list.append(row);
+  });
+  const n = S.players.length;
+  $("playersLbl").textContent = "Jugadores · " + n + " de " + MAX_PLAYERS;
+  if (host) $("waitHelp").textContent = n < 2 ? "Mandá el link a los demás. Al abrirlo entran directo a esta sala. Dejá esta pantalla abierta mientras esperás." : "Ya pueden jugar. Elegí el modo y la duración, y empezá cuando estén todos.";
+  else $("waitHelp").textContent = S.hostSeen ? "Estás adentro. Cuando " + pname(0) + " empiece, arranca la cuenta regresiva. Podés invitar a más gente con el link." : "Buscando la sala…";
+  document.querySelectorAll("#modeOpts .mode").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.mode === S.cfg.mode)); b.disabled = !host; });
+  document.querySelectorAll("#durChips .chip").forEach(ch => { ch.setAttribute("aria-pressed", String(+ch.dataset.dur === S.cfg.dur)); ch.disabled = !host; });
+  $("btnStart").hidden = !host;
+  $("btnStart").disabled = n < 2;
+  $("btnStart").textContent = n < 2 ? "Esperando jugadores…" : "Empezar con " + n;
 }
+$("modeOpts").addEventListener("click", e => {
+  const b = e.target.closest(".mode"); if (!b || S.role !== "host") return;
+  S.cfg.mode = b.dataset.mode; publishAll();
+});
 $("durChips").addEventListener("click", e => {
-  const ch = e.target.closest(".chip"); if (!ch || S.mode !== "host") return;
-  S.game.dur = +ch.dataset.dur; renderWait();
+  const ch = e.target.closest(".chip"); if (!ch || S.role !== "host") return;
+  S.cfg.dur = +ch.dataset.dur; publishAll();
 });
 $("btnStart").addEventListener("click", hostStart);
 $("btnLeaveWait").addEventListener("click", leaveRoom);
@@ -2947,40 +3327,98 @@ function copyText(text, okMsg){
 $("btnCopy").addEventListener("click", () => copyText(S.code, "Código copiado"));
 $("btnShare").addEventListener("click", () => {
   const url = inviteUrl();
-  const data = { title: "Crucigramas VS", text: S.name + " te desafía a un duelo de crucigramas. Sala " + S.code + ":", url };
+  const data = { title: "Crucigramas VS", text: S.name + " te invita a jugar crucigramas. Sala " + S.code + ":", url };
   if (navigator.share){ navigator.share(data).catch(err => { if (!err || err.name !== "AbortError") copyText(url, "Link copiado"); }); }
-  else copyText(url, "Link copiado. Mandáselo a tu rival.");
+  else copyText(url, "Link copiado. Mandáselo a los demás.");
 });
 
-/* ---------- Resultado ---------- */
+/* ---------- Resultado y revancha ---------- */
 function showResult(){
-  const me = myKey();
-  let mine = 0, theirs = 0, lastMe = 0, lastRv = 0;
-  for (const k in S.owners){ const o = S.owners[k]; if (o.p === me){ mine++; lastMe = Math.max(lastMe, o.n); } else { theirs++; lastRv = Math.max(lastRv, o.n); } }
+  const me = S.me, solo = S.role === "solo";
   const fin = $("resFinal"); fin.textContent = "";
   const btns = $("resBtns"); btns.textContent = "";
-  const mk = (t, cls, fn, dis) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = t; b.disabled = !!dis; b.addEventListener("click", fn); btns.append(b); return b; };
-  const num = (v, cls) => { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = v; return s; };
-  if (S.mode === "solo"){
-    $("resTitle").textContent = mine === S.P.words.length ? "¡Completo!" : "Se acabó";
-    fin.append(num(mine, "you"), num("de", "sep"), num(S.P.words.length));
-    $("resSub").textContent = "Palabras completadas en la práctica.";
+  const tb = $("resTally"); tb.textContent = "";
+  const mk = (t, cls, fn, dis) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = t; b.disabled = !!dis; if (fn) b.addEventListener("click", fn); btns.append(b); return b; };
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  setMissing();
+  if (solo){
+    const s = S.scores[0] || zeroScore();
+    $("resTitle").textContent = s.words === S.P.words.length ? "¡Completo!" : "Se acabó";
+    fin.append(el("span", "you", s.pts), el("span", "sep", "pts"));
+    $("resSub").textContent = s.words + " de " + S.P.words.length + " palabras completadas en la práctica.";
+    tb.hidden = true; $("resRm").hidden = true;
     mk("Jugar otra", "primary", startSolo);
-    mk("Volver al inicio", "ghost", () => { S.mode = null; showScreen("lobby"); });
-  } else {
-    let title, sub;
-    if (mine > theirs){ title = "¡Ganaste!"; sub = "Le sacaste " + (mine - theirs) + " de ventaja a " + S.rivalName + "."; }
-    else if (theirs > mine){ title = "Perdiste"; sub = S.rivalName + " completó más palabras."; }
-    else if (mine === 0){ title = "Empate"; sub = "Nadie completó palabras."; }
-    else if (lastMe < lastRv){ title = "¡Ganaste!"; sub = "Empate en palabras, pero llegaste primero a ese puntaje."; }
-    else { title = "Perdiste"; sub = "Empate en palabras; " + S.rivalName + " llegó primero a ese puntaje."; }
-    $("resTitle").textContent = title;
-    fin.append(num(mine, "you"), num("vs", "sep"), num(theirs, "rv"));
-    $("resSub").textContent = S.mode === "host" ? sub : sub + " Si " + S.rivalName + " pide revancha, arranca sola.";
-    if (S.mode === "host") mk(S.rivalHere ? "Revancha" : "Tu rival salió", "primary", hostStart, !S.rivalHere);
-    mk("Salir", "ghost", leaveRoom);
+    mk("Ver tablero", "ghost", viewBoard);
+    mk("Volver al inicio", "ghost", () => { S.role = null; S.game = null; showScreen("lobby"); });
+    $("resOverlay").hidden = false; return;
   }
+  const R = ranking(), pos = R.findIndex(x => x.i === me) + 1, n = R.length;
+  const mine = S.scores[me] || zeroScore(), top = R[0], second = R[1];
+  let title, sub;
+  if (!top || top.s.pts === 0){ title = "Empate"; sub = "Nadie completó palabras."; }
+  else if (pos === 1){
+    title = "¡Ganaste!";
+    sub = second && second.s.pts === mine.pts ? "Empate en puntos con " + pname(second.i) + ", pero llegaste primero a ese puntaje." : "Le sacaste " + plural(mine.pts - (second ? second.s.pts : 0), "punto", "puntos") + " de ventaja a " + (second ? pname(second.i) : "nadie") + ".";
+  } else if (n === 2){
+    title = "Perdiste";
+    sub = top.s.pts === mine.pts ? "Empate en puntos; " + pname(top.i) + " llegó primero a ese puntaje." : pname(top.i) + " sumó " + plural(top.s.pts - mine.pts, "punto", "puntos") + " más.";
+  } else {
+    title = "Quedaste " + pos + ".º";
+    sub = "Ganó " + pname(top.i) + " con " + plural(top.s.pts, "punto", "puntos") + ".";
+  }
+  $("resTitle").textContent = title;
+  $("resSub").textContent = sub;
+  if (n === 2){ const o = R.find(x => x.i !== me); fin.append(el("span", "you", mine.pts), el("span", "sep", "vs"), el("span", "rv", o ? o.s.pts : 0)); }
+  else fin.append(el("span", "you", mine.pts), el("span", "sep", "pts"));
+  tb.hidden = false;
+  tb.append(el("span", "h", "#"), el("span", "h", ""), el("span", "h n", "Palabras"), el("span", "h n", "Puntos"));
+  R.forEach((x, k) => {
+    const nm = el("span", null, x.p.name + (x.i === me ? " (vos)" : "") + (x.p.here ? "" : " · se fue"));
+    nm.style.color = pc(x.i); nm.style.fontWeight = "700";
+    const pt = el("span", "n", x.s.pts); pt.style.color = pc(x.i); pt.style.fontWeight = "700";
+    tb.append(el("span", "n", (k + 1) + "."), nm, el("span", "n", x.s.words), pt);
+  });
+
+  // Revancha
+  $("resRm").hidden = false;
+  $("rmLbl").textContent = n === 2 ? "Revancha" : "Otra partida";
+  const pl = $("rmPlayers"); pl.textContent = "";
+  S.players.forEach((p, i) => {
+    const r = el("div", "rm-p"), w = el("span", "who");
+    const dot = el("span", "dot " + (p.here ? "pc" : "off")); dot.style.setProperty("--pc", pc(i));
+    w.append(dot, document.createTextNode(p.name + (i === me ? " (vos)" : "")));
+    const v = S.rm[i];
+    const txt = !p.here ? "Se fue" : v === true ? "Quiere otra" : v === false ? "No quiere" : i === me ? "Sin pedir" : "Sin responder";
+    r.append(w, el("span", "chip-s " + (!p.here ? "off" : v === true ? "ok" : ""), txt)); pl.append(r);
+  });
+  const others = S.players.map((p, i) => i).filter(i => i !== me && S.players[i].here);
+  const askers = others.filter(i => S.rm[i] === true);
+  const ask = $("rmAsk"); ask.textContent = "";
+  ask.hidden = !(askers.length && S.rm[me] !== true);
+  if (!ask.hidden){
+    ask.append(el("span", null, listNames(askers.map(pname)) + (askers.length > 1 ? " quieren" : " quiere") + (n === 2 ? " la revancha" : " jugar otra")));
+    const r = el("div", "row");
+    const yes = el("button", "btn primary", "Aceptar"); yes.addEventListener("click", () => rematch("ask"));
+    const no = el("button", "btn ghost", "Rechazar"); no.addEventListener("click", () => rematch("no"));
+    r.append(yes, no); ask.append(r);
+  }
+  if (!others.length) mk(n === 2 ? "Tu rival se fue" : "Se fueron todos", "primary", null, true);
+  else if (S.rm[me] === true){
+    mk("Cancelar pedido", "ghost", () => rematch("cancel"));
+    const waiting = others.filter(i => S.rm[i] !== true).map(pname);
+    if (waiting.length) $("resSub").textContent = sub + " Esperando a " + listNames(waiting) + "…";
+  } else if (!askers.length) mk(n === 2 ? "Pedir revancha" : "Pedir otra partida", "primary", () => rematch("ask"));
+  mk("Ver tablero", "ghost", viewBoard);
+  if (S.role === "host") mk("Volver a la sala", "ghost", hostBackToRoom);
+  mk("Salir", "ghost", leaveRoom);
   $("resOverlay").hidden = false;
+}
+function viewBoard(){ S.viewBoard = true; renderAll(); window.scrollTo(0, 0); }
+function setMissing(){
+  const miss = S.P.words.filter(x => !S.owners[x.id]);
+  const el = $("resMiss");
+  el.hidden = !miss.length;
+  if (miss.length) el.textContent = (miss.length === 1 ? "Quedó 1 palabra" : "Quedaron " + miss.length + " palabras") + " sin completar en tu tablero. Tocá Ver tablero para verlas.";
 }
 
 /* ---------- Botones del lobby ---------- */
@@ -2988,8 +3426,12 @@ $("btnCreate").addEventListener("click", createRoom);
 $("btnJoin").addEventListener("click", () => joinRoom($("joinCode").value));
 $("joinCode").addEventListener("keydown", e => { if (e.key === "Enter") joinRoom($("joinCode").value); });
 $("btnSolo").addEventListener("click", startSolo);
-$("btnLeaveGame").addEventListener("click", () => { if (S.mode === "solo"){ S.mode = null; S.game = null; showScreen("lobby"); } else leaveRoom(); });
-window.addEventListener("pagehide", () => { if (CONN && CONN.open) try { CONN.send({ t: "bye" }); } catch(e){} });
+$("btnBackRes").addEventListener("click", () => { S.viewBoard = false; S.viewIdx = null; renderAll(); });
+$("btnLeaveGame").addEventListener("click", () => { if (S.role === "solo"){ S.role = null; S.game = null; showScreen("lobby"); } else leaveRoom(); });
+window.addEventListener("pagehide", () => {
+  if (CONN && CONN.open) try { CONN.send({ t: "bye" }); } catch(e){}
+  if (S.role === "host") for (const c of GUESTS.keys()) try { if (c.open) c.send({ t: "bye" }); } catch(e){}
+});
 
 })();
 </script>
