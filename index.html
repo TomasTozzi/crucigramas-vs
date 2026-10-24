@@ -73,6 +73,7 @@ input[type=text]{font:inherit;font-size:16px;padding:10px 12px;border-radius:var
 @media (min-width:760px){.lobby-grid{grid-template-columns:1.2fr 1fr}}
 .stack{display:flex;flex-direction:column;gap:14px}
 .empty{color:var(--muted);margin:0}
+.ver{margin:0;font-size:12px;color:var(--muted);text-align:center}
 .notice{border-left:4px solid var(--rival);background:var(--rival-soft);padding:10px 12px;border-radius:0 var(--r) var(--r) 0;margin:0}
 .invite{border-left:4px solid var(--you);background:var(--you-soft);padding:12px 14px;border-radius:0 var(--r) var(--r) 0;margin:0;font-weight:700}
 .rules{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
@@ -259,6 +260,7 @@ body.touch .hint{display:none}
           </div>
         </div>
         <button class="btn ghost" id="btnSolo">Practicar solo · 10 min</button>
+        <p class="ver" id="verLobby"></p>
       </div>
 
       <div class="panel">
@@ -309,6 +311,7 @@ body.touch .hint{display:none}
         <button class="btn primary" id="btnStart" hidden disabled>Empezar</button>
         <button class="btn ghost" id="btnLeaveWait">Salir</button>
       </div>
+      <p class="ver" id="verWait"></p>
     </div>
   </section>
 
@@ -2527,8 +2530,13 @@ const HAS_PEER = typeof window.Peer === "function";
 const MAX_PLAYERS = 5, ROT_SECS = window.__ROT_SECS > 0 ? window.__ROT_SECS : 90;   /* __ROT_SECS solo para pruebas */
 function rid(){ return Math.random().toString(36).slice(2, 10); }
 /* Identidad de esta pestaña: sobrevive a una recarga, así se puede volver a la misma partida */
-const UID = tabStore.get("cvs-uid") || (rid() + rid());
+/* Versión del protocolo entre dispositivos: si no coincide, se avisa en vez de quedar trabado */
+const VERSION = 4;
+/* Se reutiliza solo al recargar; una pestaña duplicada o abierta desde otra arranca con identidad nueva */
+const NAV_TYPE = ((performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {}).type;
+const UID = (NAV_TYPE === "reload" && tabStore.get("cvs-uid")) || (rid() + rid());
 tabStore.set("cvs-uid", UID);
+const LOADED_AT = Date.now();
 
 const S = {
   screen: "lobby", role: null, /* "host" | "guest" | "solo" */
@@ -2558,7 +2566,7 @@ const playing = () => S.game && (S.game.st === "cd" || S.game.st === "play");
 function listNames(arr){ return arr.length <= 1 ? (arr[0] || "") : arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1]; }
 
 let toastT = null;
-function toast(msg){ const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3200); }
+function toast(msg, ms){ const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, ms || 3200); }
 
 function showScreen(s){
   S.screen = s;
@@ -2638,6 +2646,11 @@ applyColors();
 $("nick").value = S.name;
 $("nick").addEventListener("input", () => { S.name = cleanName($("nick").value) || "Jugador"; store.set("cvs-name", S.name); });
 $("noNet").hidden = HAS_PEER;
+$("verLobby").textContent = $("verWait").textContent = "Versión " + VERSION;
+/* Una pestaña que quedó abierta mucho tiempo se recarga sola al volver, para no jugar con una versión vieja */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !S.role && Date.now() - LOADED_AT > 30 * 60 * 1000) location.reload();
+});
 $("duelControls").hidden = !HAS_PEER;
 const invited = cleanCode(new URLSearchParams(location.search).get("sala"));
 if (invited.length === 4 && HAS_PEER){
@@ -2721,7 +2734,7 @@ async function joinRoom(raw){
   resetRoomState(); S.hostSeen = false; S.seenNo = -1;
   const conn = p.connect(ID_PREFIX + code.toLowerCase(), { reliable: true, serialization: "json" });
   CONN = conn;
-  conn.on("open", () => send({ t: "hi", uid: UID, name: S.name, col: S.color }));
+  conn.on("open", () => send({ t: "hi", v: VERSION, uid: UID, name: S.name, col: S.color }));
   conn.on("data", d => { if (CONN === conn) guestOnData(d); });
   conn.on("close", () => { if (CONN === conn) hostGone(); });
   conn.on("error", () => {});
@@ -2752,6 +2765,13 @@ function hostOnConnection(conn){
 }
 function hostOnData(conn, d){
   if (!d || typeof d !== "object" || S.role !== "host") return;
+  if (d.t === "g" || (d.t === "hi" && d.v !== VERSION)){
+    // alguien con otra versión del juego (por ejemplo, una pestaña abierta desde antes de actualizar)
+    try { conn.send(d.t === "g" ? { t: "bye" } : { t: "ver", v: VERSION }); } catch(e){}
+    setTimeout(() => { try { conn.close(); } catch(e){} }, 600);
+    toast((cleanName(d.name) || "Alguien") + " intentó entrar con otra versión del juego. Que recargue la página y vuelva a entrar.", 8000);
+    return;
+  }
   if (d.t === "hi"){
     const uid = typeof d.uid === "string" ? d.uid.slice(0, 40) : "";
     if (!uid) return;
@@ -2796,7 +2816,7 @@ function hostDrop(conn){
 }
 function payload(){
   return {
-    t: "s", code: S.code,
+    t: "s", v: VERSION, code: S.code,
     players: S.players.map(p => ({ n: p.name, c: p.col, h: p.here, l: !!p.late })),
     cfg: S.cfg, game: S.game,
     boards: S.boards.map(b => ({ k: b.key, s: b.seed, o: Object.keys(b.own).map(w => [+w, b.own[w].p, b.own[w].n]) })),
@@ -2895,7 +2915,9 @@ function guestOnData(d){
   if (d.t === "full"){ leaveRoom(); toast("La sala ya tiene " + MAX_PLAYERS + " jugadores."); return; }
   if (d.t === "busy"){ leaveRoom(); toast("La partida ya empezó. Esperá a que termine y volvé a entrar con el link."); return; }
   if (d.t === "bye"){ hostGone(); return; }
+  if (d.t === "ver"){ leaveRoom(); toast("Tenés otra versión del juego que el anfitrión. Recargá la página y volvé a entrar.", 8000); return; }
   if (d.t !== "s") return;
+  if (d.v !== VERSION){ leaveRoom(); toast("El anfitrión tiene otra versión del juego. Pedile que recargue la página y vuelvan a intentar.", 8000); return; }
   if (!S.hostSeen){ S.hostSeen = true; clearTimeout(S.joinTimer); }
   const players = Array.isArray(d.players) ? d.players.slice(0, MAX_PLAYERS) : [];
   S.players = players.map(p => ({ name: cleanName(p && p.n) || "Jugador", col: validColor(p && p.c) ? p.c : "naranja", here: !!(p && p.h), late: !!(p && p.l) }));
